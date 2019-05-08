@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 
 class o_ONet(nn.Module):
-    def __init__(self, net_size, input_size, feature_dim):
+    def __init__(self, net_size, feature_dim):
         super(o_ONet, self).__init__()
 
         self.small_conv = nn.Sequential(

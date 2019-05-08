@@ -6,8 +6,8 @@ from data_utils import ScheduledWeightedSampler
 from metrics import classify, accuracy, quadratic_weighted_kappa
 
 
-def train(net, net_size, input_size, feature_dim, train_dataset,
-          val_dataset, epochs, learning_rate, batch_size, save_path):
+def train(net, net_size, feature_dim, train_dataset, val_dataset,
+          epochs, learning_rate, batch_size, save_path):
     # create dataloader
     train_targets = [sampler[1] for sampler in train_dataset.imgs]
     weighted_sampler = ScheduledWeightedSampler(len(train_dataset), train_targets, True)
@@ -15,7 +15,7 @@ def train(net, net_size, input_size, feature_dim, train_dataset,
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
     # define model
-    model = net(net_size, input_size, feature_dim).cuda()
+    model = net(net_size, feature_dim).cuda()
 
     # define loss and optimizier
     MSELoss = torch.nn.MSELoss()
@@ -72,7 +72,7 @@ def train(net, net_size, input_size, feature_dim, train_dataset,
             )
 
         # save model
-        acc = eval(model, val_loader)
+        acc = _eval(model, val_loader)
         print('validation accuracy: {}'.format(acc))
         if acc > max_acc:
             torch.save(model, save_path)

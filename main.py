@@ -14,7 +14,7 @@ def main():
     CONFIG = SMALL_NET_CONFIG
 
     # load dataset
-    train_dataset, test_dataset, val_dataset = generate_data(CONFIG['DATA_PATH'], CONFIG['INPUT_SIZE'])
+    train_dataset, test_dataset, val_dataset = generate_data(CONFIG['DATA_PATH'])
 
     save_dir = os.path.split(CONFIG['SAVE_PATH'])[0]
     if not os.path.exists(save_dir):
@@ -24,7 +24,6 @@ def main():
     train(
         net=o_ONet,
         net_size=CONFIG['NET_SIZE'],
-        input_size=CONFIG['INPUT_SIZE'],
         feature_dim=CONFIG['FEATURE_DIM'],
         train_dataset=train_dataset,
         val_dataset=val_dataset,

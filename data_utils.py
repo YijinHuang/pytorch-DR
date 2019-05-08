@@ -6,7 +6,7 @@ from torch.utils.data.sampler import Sampler
 from torchvision import transforms, datasets
 
 
-def generate_data(data_path, input_size):
+def generate_data(data_path):
     train_path = os.path.join(data_path, 'train')
     test_path = os.path.join(data_path, 'test')
     val_path = os.path.join(data_path, 'val')
