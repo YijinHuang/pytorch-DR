@@ -11,17 +11,21 @@ def generate_data(data_path):
     test_path = os.path.join(data_path, 'test')
     val_path = os.path.join(data_path, 'val')
 
-    preprocess = transforms.Compose([
+    train_preprocess = transforms.Compose([
         transforms.RandomRotation((0, 360)),
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
+    test_preprocess = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ])
 
-    train_dataset = datasets.ImageFolder(train_path, preprocess)
-    test_dataset = datasets.ImageFolder(test_path, preprocess)
-    val_dataset = datasets.ImageFolder(val_path, preprocess)
+    train_dataset = datasets.ImageFolder(train_path, train_preprocess)
+    test_dataset = datasets.ImageFolder(test_path, test_preprocess)
+    val_dataset = datasets.ImageFolder(val_path, test_preprocess)
 
     return train_dataset, test_dataset, val_dataset
 
