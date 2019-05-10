@@ -17,6 +17,8 @@ def train(net, net_size, feature_dim, train_dataset, val_dataset,
 
     # define model
     model = net(net_size, feature_dim).cuda()
+    for param_tensor in model.state_dict():
+        print(param_tensor, "\t", model.state_dict()[param_tensor].size())
 
     # define loss and optimizier
     MSELoss = torch.nn.MSELoss()

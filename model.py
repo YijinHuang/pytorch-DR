@@ -7,7 +7,8 @@ class o_ONet(nn.Module):
     def __init__(self, net_size, feature_dim):
         super(o_ONet, self).__init__()
 
-        self.small_conv = nn.Sequential(
+        # 1-11 layers
+        small_conv = nn.Sequential(
             self.basic_conv2d(3, 32, kernel_size=4, stride=2, padding=1),
             self.basic_conv2d(32, 32, kernel_size=4, stride=1, padding=2),
             nn.MaxPool2d(kernel_size=3, stride=2, padding=0),
@@ -20,32 +21,31 @@ class o_ONet(nn.Module):
             self.basic_conv2d(128, 128, kernel_size=4, stride=1, padding=2),
         )
 
-        self.medium_conv = nn.Sequential(
-            self.small_conv,
+        # 12-15 layers
+        medium_conv = nn.Sequential(
             nn.MaxPool2d(kernel_size=3, stride=2, padding=0),
             self.basic_conv2d(128, 256, kernel_size=4, stride=1, padding=2),
             self.basic_conv2d(256, 256, kernel_size=4, stride=1, padding=1),
             self.basic_conv2d(256, 256, kernel_size=4, stride=1, padding=2),
         )
 
-        self.large_conv = nn.Sequential(
-            self.medium_conv,
+        # 16-17 layers (without 18 layer for net B)
+        large_conv = nn.Sequential(
             nn.MaxPool2d(kernel_size=3, stride=2, padding=0),
             self.basic_conv2d(256, 512, kernel_size=4, stride=1, padding=1),
         )
 
-        if net_size == 'small':
-            self.conv = self.small_conv
-        elif net_size == 'medium':
-            self.conv = self.medium_conv
-        elif net_size == 'large':
-            self.conv = self.large_conv
+        # name layers
+        self.conv = nn.Sequential()
+        if net_size in ['small', 'medium', 'large']:
+            self.conv.add_module('small_conv', small_conv)
+        if net_size in ['medium', 'large']:
+            self.conv.add_module('medium_conv', medium_conv)
+        if net_size in ['large']:
+            self.conv.add_module('large_conv', large_conv)
+        self.conv.add_module('rmspool', RMSPool())
 
-        self.conv = nn.Sequential(
-            self.conv,
-            RMSPool()
-        )
-
+        # regression part
         self.fc = nn.Sequential(
             nn.Dropout(p=0.5),
             nn.Linear(feature_dim, 1024),
@@ -58,6 +58,7 @@ class o_ONet(nn.Module):
             nn.Linear(512, 1)
         )
 
+        # initial parameters
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='leaky_relu')
@@ -73,12 +74,14 @@ class o_ONet(nn.Module):
 
     def forward(self, x):
         features = self.conv(x)
+        # reshape to satisify maxpool1d input shape requirement
         features = features.view(features.size(0), 1, -1)
         predict = self.fc(features)
         predict = torch.squeeze(predict)
         return predict
 
 
+# o_ONet with batch normalization
 class o_ONet2(nn.Module):
     def __init__(self):
         super(o_ONet2, self).__init__()

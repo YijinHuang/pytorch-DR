@@ -1,8 +1,9 @@
+import torch
 import numpy as np
 
 
 def classify(predict, thresholds=[0, 0.5, 1.5, 2.5, 3.5]):
-    predict = max(predict.item(), thresholds[0])
+    predict = max(predict, thresholds[0])
     for i in reversed(range(len(thresholds))):
         if predict >= thresholds[i]:
             return i
@@ -35,15 +36,19 @@ def quadratic_weighted_kappa(conf_mat):
 def accuracy(predictions, targets, c_matrix=None):
     predictions = predictions.data
     targets = targets.data
-    predicted = [classify(p) for p in predictions]
+
+    # avoid modifying origin predictions
+    predicted = torch.tensor(
+        [classify(p.item()) for p in predictions]
+    ).cuda().float()
 
     # update confusion matrix
     if c_matrix is not None:
         for i, p in enumerate(predicted):
             c_matrix[int(targets[i])][p] += 1
 
-    correct = (predictions == targets).sum().item()
-    return correct / predictions.size(0)
+    correct = (predicted == targets).sum().item()
+    return correct / len(predicted)
 
 
 if __name__ == "__main__":
