@@ -40,9 +40,9 @@ def train(net, net_size, feature_dim, train_dataset, val_dataset,
         lr_scheduler.step()
         if epoch in milestones:
             msg = 'Learning rate decayed to {}'.format(lr_scheduler.get_lr()[0])
-            print(''.join(['='] * len(msg)))
+            print('=' * len(msg))
             print(msg)
-            print(''.join(['='] * len(msg)))
+            print('=' * len(msg))
 
         epoch_loss = 0
         correct = 0
@@ -79,9 +79,9 @@ def train(net, net_size, feature_dim, train_dataset, val_dataset,
             torch.save(model, save_path)
             max_acc = acc
             msg = 'Model save at {}'.format(save_path)
-            print(''.join(['='] * len(msg)))
+            print('=' * len(msg))
             print(msg)
-            print(''.join(['='] * len(msg)))
+            print('=' * len(msg))
 
         # record
         record_epochs.append(epoch)

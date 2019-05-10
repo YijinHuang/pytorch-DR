@@ -35,13 +35,12 @@ def quadratic_weighted_kappa(conf_mat):
 def accuracy(predictions, targets, c_matrix=None):
     predictions = predictions.data
     targets = targets.data
-    for i, p in enumerate(predictions):
-        predictions[i] = classify(p)
+    predicted = [classify(p) for p in predictions]
 
     # update confusion matrix
     if c_matrix is not None:
-        for i, p in enumerate(predictions):
-            c_matrix[int(targets[i])][int(p)] += 1
+        for i, p in enumerate(predicted):
+            c_matrix[int(targets[i])][p] += 1
 
     correct = (predictions == targets).sum().item()
     return correct / predictions.size(0)
