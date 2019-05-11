@@ -45,7 +45,7 @@ def accuracy(predictions, targets, c_matrix=None):
     # update confusion matrix
     if c_matrix is not None:
         for i, p in enumerate(predicted):
-            c_matrix[int(targets[i])][p] += 1
+            c_matrix[int(targets[i])][int(p.item())] += 1
 
     correct = (predicted == targets).sum().item()
     return correct / len(predicted)

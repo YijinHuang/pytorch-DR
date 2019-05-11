@@ -94,9 +94,9 @@ def train(net, net_size, feature_dim, train_dataset, val_dataset,
 
 
 def evaluate(model_path, test_dataset):
-    c_matrix = np.zeros((5, 5))
+    c_matrix = np.zeros((5, 5), dtype=int)
 
-    trained_model = torch.load(model_path)
+    trained_model = torch.load(model_path).cuda()
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
     test_acc = _eval(trained_model, test_loader, c_matrix)
     print('========================================')
