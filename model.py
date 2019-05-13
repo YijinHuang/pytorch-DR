@@ -83,14 +83,18 @@ class o_ONet(nn.Module):
     # load part of pretrained_model like o_O solution \
     # using multi-scale image to train model by setting type to part \
     # or load full weights by setting type to full.
-    def load_weights(self, pretrained_model, type='full'):
+    def load_weights(self, pretrained_model, exclude=[]):
         pretrained_dict = torch.load(pretrained_model).state_dict()
         model_dict = self.state_dict()
-        if type == 'part':
-            pretrained_dict = {
-                name: pretrained_tensor for name, pretrained_tensor in pretrained_dict.items()
-                if name in model_dict and 'fc' not in name
-            }
+
+        # exclude
+        for name in list(pretrained_dict.keys()):
+            for e in exclude:
+                if e in name:
+                    pretrained_dict.pop(name)
+                    break
+
+        # load weights
         model_dict.update(pretrained_dict)
         self.load_state_dict(model_dict)
 
