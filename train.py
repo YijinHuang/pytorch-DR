@@ -8,7 +8,7 @@ from metrics import classify, accuracy, quadratic_weighted_kappa
 
 
 def train(net, net_size, feature_dim, train_dataset, val_dataset, epochs,
-          learning_rate, batch_size, save_path, pretrained_model=None):
+          learning_rate, batch_size, save_path, pretrained_model=None, type='part'):
     # create dataloader
     train_targets = [sampler[1] for sampler in train_dataset.imgs]
     weighted_sampler = ScheduledWeightedSampler(len(train_dataset), train_targets, True)
@@ -18,8 +18,10 @@ def train(net, net_size, feature_dim, train_dataset, val_dataset, epochs,
     # define model
     model = net(net_size, feature_dim).cuda()
     print_msg('Trainable layers: ', ['{}\t{}'.format(k, v) for k, v in model.layer_configs()])
+
+    # load pretrained weights
     if pretrained_model:
-        pretrained_dict = model.load_weights(pretrained_model)
+        pretrained_dict = model.load_weights(pretrained_model, type)
         print_msg('Loaded weights from {}: '.format(pretrained_model), sorted(pretrained_dict.keys()))
 
     # define loss and optimizier

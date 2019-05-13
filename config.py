@@ -1,6 +1,6 @@
 SMALL_NET_CONFIG = {
     'NET_SIZE': 'small',
-    'DATA_PATH': '../../grade/kaggle/train_data_crop_112',
+    'DATA_PATH': '../../grade/kaggle/train_data_full_crop_112',
     'SAVE_PATH': '../../grade/kaggle/pt_models/result_o_O_small.pt',
     'PRETRAINED_PATH': None,
     'LEARNING_RATE': 3e-3,
@@ -12,7 +12,7 @@ SMALL_NET_CONFIG = {
 
 MEDIUM_NET_CONFIG = {
     'NET_SIZE': 'medium',
-    'DATA_PATH': '../../grade/kaggle/train_data_crop_224',
+    'DATA_PATH': '../../grade/kaggle/train_data_full_crop_224',
     'SAVE_PATH': '../../grade/kaggle/pt_models/result_o_O_medium.pt',
     'PRETRAINED_PATH': '../../grade/kaggle/pt_models/result_o_O_small.pt',
     'LEARNING_RATE': 3e-3,
@@ -24,7 +24,7 @@ MEDIUM_NET_CONFIG = {
 
 LARGE_NET_CONFIG = {
     'NET_SIZE': 'large',
-    'DATA_PATH': '../../grade/kaggle/train_data_crop_448',
+    'DATA_PATH': '../../grade/kaggle/train_data_full_crop_448',
     'SAVE_PATH': '../../grade/kaggle/pt_models/result_o_O_large.pt',
     'PRETRAINED_PATH': '../../grade/kaggle/pt_models/result_o_O_medium.pt',
     'LEARNING_RATE': 3e-3,
