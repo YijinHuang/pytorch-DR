@@ -17,11 +17,10 @@ def train(net, net_size, feature_dim, train_dataset, val_dataset, epochs,
 
     # define model
     model = net(net_size, feature_dim).cuda()
-    print_msg('Trainable layers')
-    model.display_layers()
+    print_msg('Trainable layers: ', ['{}\t{}'.format(k, v) for k, v in model.layer_configs()])
     if pretrained_model:
-        model.load_weights(pretrained_model)
-        print_msg('Loaded weights from {}.'.format(pretrained_model))
+        pretrained_dict = model.load_weights(pretrained_model)
+        print_msg('Loaded weights from {}: '.format(pretrained_model), sorted(pretrained_dict.keys()))
 
     # define loss and optimizier
     MSELoss = torch.nn.MSELoss()
@@ -120,7 +119,11 @@ def _eval(model, dataloader, c_matrix=None):
     acc = round(correct / total, 4)
     return acc
 
-def print_msg(msg):
-    print('=' * len(msg))
+
+def print_msg(msg, appendixs=[]):
+    max_len = len(max([msg, *appendixs], key=len))
+    print('=' * max_len)
     print(msg)
-    print('=' * len(msg))
+    for appendix in appendixs:
+        print(appendix)
+    print('=' * max_len)
