@@ -61,7 +61,8 @@ class o_ONet(nn.Module):
         # initial parameters
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='leaky_relu')
+                # nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='leaky_relu')
+                nn.init.zeros_(m.weight)
             elif isinstance(m, nn.Linear):
                 nn.init.normal_(m.weight, 0, 0.01)
                 nn.init.constant_(m.bias, 0)
@@ -79,6 +80,20 @@ class o_ONet(nn.Module):
         predict = self.fc(features)
         predict = torch.squeeze(predict)
         return predict
+
+    def load_weights(self, pretrained_model):
+        pretrained_model = torch.load(pretrained_model)
+        model_dict = self.state_dict()
+        pretrained_dict = {
+            name: pretrain_tensor for name, pretrain_tensor in pretrained_model.state_dict().items()
+            if name in model_dict and 'fc' not in name
+        }
+        model_dict.update(pretrained_dict)
+        self.load_state_dict(model_dict)
+
+    def display_layers(self):
+        for param_tensor in self.state_dict():
+            print(param_tensor, "\t", self.state_dict()[param_tensor].size())
 
 
 # o_ONet with batch normalization

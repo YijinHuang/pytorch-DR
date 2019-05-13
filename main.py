@@ -30,7 +30,8 @@ def main():
         epochs=CONFIG['EPOCHS'],
         learning_rate=CONFIG['LEARNING_RATE'],
         batch_size=CONFIG['BATCH_SIZE'],
-        save_path=CONFIG['SAVE_PATH']
+        save_path=CONFIG['SAVE_PATH'],
+        pretrained_model=CONFIG['PRETRAINED_PATH']
     )
 
     # test

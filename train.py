@@ -7,8 +7,8 @@ from data_utils import ScheduledWeightedSampler
 from metrics import classify, accuracy, quadratic_weighted_kappa
 
 
-def train(net, net_size, feature_dim, train_dataset, val_dataset,
-          epochs, learning_rate, batch_size, save_path):
+def train(net, net_size, feature_dim, train_dataset, val_dataset, epochs,
+          learning_rate, batch_size, save_path, pretrained_model=None):
     # create dataloader
     train_targets = [sampler[1] for sampler in train_dataset.imgs]
     weighted_sampler = ScheduledWeightedSampler(len(train_dataset), train_targets, True)
@@ -17,8 +17,11 @@ def train(net, net_size, feature_dim, train_dataset, val_dataset,
 
     # define model
     model = net(net_size, feature_dim).cuda()
-    for param_tensor in model.state_dict():
-        print(param_tensor, "\t", model.state_dict()[param_tensor].size())
+    print_msg('Trainable layers')
+    model.display_layers()
+    if pretrained_model:
+        model.load_weights(pretrained_model)
+        print_msg('Loaded weights from {}.'.format(pretrained_model))
 
     # define loss and optimizier
     MSELoss = torch.nn.MSELoss()
@@ -41,10 +44,7 @@ def train(net, net_size, feature_dim, train_dataset, val_dataset,
         # learning rate update
         lr_scheduler.step()
         if epoch in milestones:
-            msg = 'Learning rate decayed to {}'.format(lr_scheduler.get_lr()[0])
-            print('=' * len(msg))
-            print(msg)
-            print('=' * len(msg))
+            print_msg('Learning rate decayed to {}'.format(lr_scheduler.get_lr()[0]))
 
         epoch_loss = 0
         correct = 0
@@ -80,10 +80,7 @@ def train(net, net_size, feature_dim, train_dataset, val_dataset,
         if acc > max_acc:
             torch.save(model, save_path)
             max_acc = acc
-            msg = 'Model save at {}'.format(save_path)
-            print('=' * len(msg))
-            print(msg)
-            print('=' * len(msg))
+            print_msg('Model save at {}'.format(save_path))
 
         # record
         record_epochs.append(epoch)
@@ -122,3 +119,8 @@ def _eval(model, dataloader, c_matrix=None):
         correct += accuracy(y_pred, y, c_matrix) * y.size(0)
     acc = round(correct / total, 4)
     return acc
+
+def print_msg(msg):
+    print('=' * len(msg))
+    print(msg)
+    print('=' * len(msg))
