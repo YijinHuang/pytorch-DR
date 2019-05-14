@@ -33,7 +33,7 @@ def train(net, net_size, feature_dim, train_dataset, val_dataset, epochs,
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=milestones, gamma=0.1)
 
     # train
-    max_acc = 0
+    max_kappa = 0
     record_epochs, accs, losses = [], [], []
     for epoch in range(1, epochs + 1):
         model.train()
@@ -76,11 +76,13 @@ def train(net, net_size, feature_dim, train_dataset, val_dataset, epochs,
             )
 
         # save model
-        acc = _eval(model, val_loader)
-        print('validation accuracy: {}'.format(acc))
-        if acc > max_acc:
+        c_matrix = np.zeros((5, 5), dtype=int)
+        acc = _eval(model, val_loader, c_matrix)
+        kappa = quadratic_weighted_kappa(c_matrix)
+        print('validation accuracy: {}, kappa: {}'.format(acc, kappa))
+        if kappa > max_kappa:
             torch.save(model, save_path)
-            max_acc = acc
+            max_kappa = kappa
             print_msg('Model save at {}'.format(save_path))
 
         # record
