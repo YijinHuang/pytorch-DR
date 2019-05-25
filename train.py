@@ -17,17 +17,13 @@ def train(net, net_size, feature_dim, train_dataset, val_dataset, epochs, learni
 
     # define model
     model = net(net_size, feature_dim).cuda()
-    params = model.state_dict()
+    params = model.named_parameters()
     print_msg('Trainable layers: ', ['{}\t{}'.format(k, v) for k, v in model.layer_configs()])
 
     # load pretrained weights
     if pretrained_model:
         pretrained_dict = model.load_weights(pretrained_model, ['fc'])
         print_msg('Loaded weights from {}: '.format(pretrained_model), sorted(pretrained_dict.keys()))
-
-        # freeze pretrained layers for some time
-        for param in pretrained_dict.values():
-            param.requires_grad = False
 
     # define loss and optimizier
     MSELoss = torch.nn.MSELoss()
@@ -40,12 +36,12 @@ def train(net, net_size, feature_dim, train_dataset, val_dataset, epochs, learni
     # train
     max_kappa = 0
     record_epochs, accs, losses = [], [], []
+    model.train()
     for epoch in range(1, epochs + 1):
         # unfreeze layers
-        if not pretrained_model or epoch >= unfreeze_epoch:
-            for param_name in params:
-                params[param_name].requires_grad = False if param_name in pretrained_model else True
-
+        if pretrained_model and epoch < unfreeze_epoch:
+            for name, param in params:
+                param.requires_grad = False if name in pretrained_dict.keys() else True
 
         # resampling weight update
         weighted_sampler.step()

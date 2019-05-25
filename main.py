@@ -32,7 +32,7 @@ def main():
         batch_size=CONFIG['BATCH_SIZE'],
         save_path=CONFIG['SAVE_PATH'],
         pretrained_model=CONFIG['PRETRAINED_PATH'],
-        unfreeze_epoch=20
+        unfreeze_epoch=10
         )
 
     # test
