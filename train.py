@@ -22,7 +22,7 @@ def train(net, net_size, feature_dim, train_dataset, val_dataset, epochs, learni
 
     # load pretrained weights
     if pretrained_model:
-        pretrained_dict = model.load_weights(pretrained_model, ['fc'])
+        pretrained_dict = model.load_weights(pretrained_model, ['fc', 'dense'])
         print_msg('Loaded weights from {}: '.format(pretrained_model), sorted(pretrained_dict.keys()))
 
     # define loss and optimizier
