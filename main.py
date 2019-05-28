@@ -24,6 +24,7 @@ def main():
     train(
         net=o_ONet,
         net_size=CONFIG['NET_SIZE'],
+        input_size=CONFIG['INPUT_SIZE'],
         feature_dim=CONFIG['FEATURE_DIM'],
         train_dataset=train_dataset,
         val_dataset=val_dataset,

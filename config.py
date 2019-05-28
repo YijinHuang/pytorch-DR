@@ -5,7 +5,7 @@ SMALL_NET_CONFIG = {
     'PRETRAINED_PATH': None,
     'LEARNING_RATE': 3e-3,
     'INPUT_SIZE': 112,
-    'FEATURE_DIM': 1152,
+    'FEATURE_DIM': 512,
     'BATCH_SIZE': 128,
     'EPOCHS': 200
 }
@@ -17,7 +17,7 @@ MEDIUM_NET_CONFIG = {
     'PRETRAINED_PATH': '../../grade/kaggle/pt_models/result_o_O_small.pt',
     'LEARNING_RATE': 3e-3,
     'INPUT_SIZE': 224,
-    'FEATURE_DIM': 2304,
+    'FEATURE_DIM': 1024,
     'BATCH_SIZE': 128,
     'EPOCHS': 200
 }

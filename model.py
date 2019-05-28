@@ -4,47 +4,52 @@ import torch.nn.functional as F
 
 
 class o_ONet(nn.Module):
-    def __init__(self, net_size, feature_dim):
+    def __init__(self, net_size, input_size, feature_dim):
         super(o_ONet, self).__init__()
 
-        # 1-11 layers
-        small_conv = nn.Sequential(
-            self.basic_conv2d(3, 32, 224, 224, kernel_size=5, stride=2, padding=2),
-            self.basic_conv2d(32, 32, 224, 224, kernel_size=3, stride=1, padding=1),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=0),
-            self.basic_conv2d(32, 64, 56, 56, kernel_size=5, stride=2, padding=2),
-            self.basic_conv2d(64, 64, 56, 56, kernel_size=3, stride=1, padding=1),
-            self.basic_conv2d(64, 64, 56, 56, kernel_size=3, stride=1, padding=1),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=0),
-            self.basic_conv2d(64, 128, 27, 27, kernel_size=3, stride=1, padding=1),
-            self.basic_conv2d(128, 128, 27, 27, kernel_size=3, stride=1, padding=1),
-            self.basic_conv2d(128, 128, 27, 27, kernel_size=3, stride=1, padding=1),
-        )
+        # require inputs width and height in each layer because of the using of untied biases.
+        sizes = self.cal_sizes(net_size, input_size)
+        print(sizes)
 
-        # 12-15 layers
-        medium_conv = nn.Sequential(
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=0),
-            self.basic_conv2d(128, 256, 13, 13, kernel_size=3, stride=1, padding=1),
-            self.basic_conv2d(256, 256, 13, 13, kernel_size=3, stride=1, padding=1),
-            self.basic_conv2d(256, 256, 13, 13, kernel_size=3, stride=1, padding=1),
-        )
-
-        # 16-17 layers (without 18 layer for net B)
-        large_conv = nn.Sequential(
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=0),
-            self.basic_conv2d(256, 512, 6, 6, kernel_size=3, stride=1, padding=1),
-            self.basic_conv2d(512, 512, 6, 6, kernel_size=3, stride=1, padding=1),
-        )
-
-        # name layers
+        # named layers
         self.conv = nn.Sequential()
         if net_size in ['small', 'medium', 'large']:
+            # 1-11 layers
+            small_conv = nn.Sequential(
+                self.basic_conv2d(3, 32, sizes[0], sizes[0], kernel_size=5, stride=2, padding=2),
+                self.basic_conv2d(32, 32, sizes[0], sizes[0], kernel_size=3, stride=1, padding=1),
+                nn.MaxPool2d(kernel_size=3, stride=2, padding=0),
+                self.basic_conv2d(32, 64, sizes[1], sizes[1], kernel_size=5, stride=2, padding=2),
+                self.basic_conv2d(64, 64, sizes[1], sizes[1], kernel_size=3, stride=1, padding=1),
+                self.basic_conv2d(64, 64, sizes[1], sizes[1], kernel_size=3, stride=1, padding=1),
+                nn.MaxPool2d(kernel_size=3, stride=2, padding=0),
+                self.basic_conv2d(64, 128, sizes[2], sizes[2], kernel_size=3, stride=1, padding=1),
+                self.basic_conv2d(128, 128, sizes[2], sizes[2], kernel_size=3, stride=1, padding=1),
+                self.basic_conv2d(128, 128, sizes[2], sizes[2], kernel_size=3, stride=1, padding=1),
+            )
             self.conv.add_module('small_conv', small_conv)
+
         if net_size in ['medium', 'large']:
+            # 12-15 layers
+            medium_conv = nn.Sequential(
+                nn.MaxPool2d(kernel_size=3, stride=2, padding=0),
+                self.basic_conv2d(128, 256, sizes[3], sizes[3], kernel_size=3, stride=1, padding=1),
+                self.basic_conv2d(256, 256, sizes[3], sizes[3], kernel_size=3, stride=1, padding=1),
+                self.basic_conv2d(256, 256, sizes[3], sizes[3], kernel_size=3, stride=1, padding=1),
+            )
             self.conv.add_module('medium_conv', medium_conv)
+
         if net_size in ['large']:
+            # 16-18 layers
+            large_conv = nn.Sequential(
+                nn.MaxPool2d(kernel_size=3, stride=2, padding=0),
+                self.basic_conv2d(256, 512, sizes[4], sizes[4], kernel_size=3, stride=1, padding=1),
+                self.basic_conv2d(512, 512, sizes[4], sizes[4], kernel_size=3, stride=1, padding=1),
+            )
             self.conv.add_module('large_conv', large_conv)
-        self.conv.add_module('rmspool', RMSPool())
+
+        # RMSPooling layer
+        self.conv.add_module('rmspool', RMSPool(3, 3))
 
         # regression part
         self.fc = nn.Sequential(
@@ -106,11 +111,36 @@ class o_ONet(nn.Module):
         model_dict = self.state_dict()
         return [(tensor, model_dict[tensor].size()) for tensor in model_dict]
 
+    def cal_sizes(self, net_size, input_size):
+        sizes = []
+        if net_size in ['small', 'medium', 'large']:
+            sizes.append(self._reduce_size(input_size, 5, 2, 2))
+            after_maxpool = self._reduce_size(sizes[-1], 3, 0, 2)
+            sizes.append(self._reduce_size(after_maxpool, 5, 2, 2))
+            after_maxpool = self._reduce_size(sizes[-1], 3, 0, 2)
+            sizes.append(self._reduce_size(after_maxpool, 3, 1, 1))
+        if net_size in ['medium', 'large']:
+            after_maxpool = self._reduce_size(sizes[-1], 3, 0, 2)
+            sizes.append(self._reduce_size(after_maxpool, 3, 1, 1))
+        if net_size in ['large']:
+            after_maxpool = self._reduce_size(sizes[-1], 3, 0, 2)
+            sizes.append(self._reduce_size(after_maxpool, 3, 1, 1))
+
+        return sizes
+
+    def _reduce_size(self, input_size, kernel_size, padding, stride):
+        return (input_size + (2 * padding) - (kernel_size - 1) - 1) // stride + 1
+
 
 class RMSPool(nn.Module):
+    def __init__(self, kernel_size, stride):
+        super(RMSPool, self).__init__()
+        self.kernel_size = kernel_size
+        self.stride = stride
+
     def forward(self, x):
         x = torch.pow(x, 2)
-        x = F.avg_pool2d(x, kernel_size=3, stride=2)
+        x = F.avg_pool2d(x, kernel_size=self.kernel_size, stride=self.stride)
         x = torch.sqrt(x)
         return x
 
