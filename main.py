@@ -11,7 +11,7 @@ from data_utils import generate_data
 
 def main():
     # network config
-    CONFIG = SMALL_NET_CONFIG
+    CONFIG = MEDIUM_NET_CONFIG
 
     # load dataset
     train_dataset, test_dataset, val_dataset = generate_data(CONFIG['DATA_PATH'])
