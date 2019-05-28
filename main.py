@@ -8,6 +8,8 @@ from model import o_ONet
 from train import train, evaluate
 from data_utils import generate_data
 
+torch.set_num_threads(8)
+
 
 def main():
     # network config
@@ -34,7 +36,7 @@ def main():
         save_path=CONFIG['SAVE_PATH'],
         pretrained_model=CONFIG['PRETRAINED_PATH'],
         unfreeze_epoch=10
-        )
+    )
 
     # test
     evaluate(CONFIG['SAVE_PATH'], test_dataset)
