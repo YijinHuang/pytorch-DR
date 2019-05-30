@@ -13,7 +13,7 @@ torch.set_num_threads(8)
 
 def main():
     # network config
-    CONFIG = SMALL_NET_CONFIG
+    CONFIG = LARGE_NET_CONFIG
 
     # load dataset
     train_dataset, test_dataset, val_dataset = generate_data(CONFIG['DATA_PATH'])
@@ -35,7 +35,6 @@ def main():
         batch_size=CONFIG['BATCH_SIZE'],
         save_path=CONFIG['SAVE_PATH'],
         pretrained_model=CONFIG['PRETRAINED_PATH'],
-        unfreeze_epoch=10
     )
 
     # test

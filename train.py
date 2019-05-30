@@ -7,8 +7,8 @@ from data_utils import ScheduledWeightedSampler
 from metrics import classify, accuracy, quadratic_weighted_kappa
 
 
-def train(net, net_size, input_size, feature_dim, train_dataset, val_dataset, epochs,
-          learning_rate, batch_size, save_path, pretrained_model=None, unfreeze_epoch=0):
+def train(net, net_size, input_size, feature_dim, train_dataset, val_dataset,
+          epochs, learning_rate, batch_size, save_path, pretrained_model=None):
     # create dataloader
     train_targets = [sampler[1] for sampler in train_dataset.imgs]
     weighted_sampler = ScheduledWeightedSampler(len(train_dataset), train_targets, True)
@@ -17,7 +17,6 @@ def train(net, net_size, input_size, feature_dim, train_dataset, val_dataset, ep
 
     # define model
     model = net(net_size, input_size, feature_dim).cuda()
-    params = model.named_parameters()
     print_msg('Trainable layers: ', ['{}\t{}'.format(k, v) for k, v in model.layer_configs()])
 
     # load pretrained weights
@@ -38,11 +37,6 @@ def train(net, net_size, input_size, feature_dim, train_dataset, val_dataset, ep
     record_epochs, accs, losses = [], [], []
     model.train()
     for epoch in range(1, epochs + 1):
-        # unfreeze layers
-        if pretrained_model and epoch < unfreeze_epoch:
-            for name, param in params:
-                param.requires_grad = False if name in pretrained_dict.keys() else True
-
         # resampling weight update
         weighted_sampler.step()
 

@@ -9,7 +9,6 @@ class o_ONet(nn.Module):
 
         # require inputs width and height in each layer because of the using of untied biases.
         sizes = self.cal_sizes(net_size, input_size)
-        print(sizes)
 
         # named layers
         self.conv = nn.Sequential()
@@ -96,6 +95,7 @@ class o_ONet(nn.Module):
             # using untied biases will make it unable to reload.
             if 'bias' in name:
                 pretrained_dict.pop(name)
+                continue
             for e in exclude:
                 if e in name:
                     pretrained_dict.pop(name)
