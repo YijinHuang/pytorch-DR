@@ -6,21 +6,46 @@ from torch.utils.data.sampler import Sampler
 from torchvision import transforms, datasets
 
 
-def generate_data(data_path):
+# channel means and standard deviations of kaggle dataset
+MEAN = [108.64628601 / 255, 75.86886597 / 255, 54.34005737 / 255]
+STD = [70.53946096 / 255, 51.71475228 / 255, 43.03428563 / 255]
+
+# for color augmentation, computed with make_pca.py
+U = torch.tensor([[-0.56543481, 0.71983482, 0.40240142],
+                  [-0.5989477, -0.02304967, -0.80036049],
+                  [-0.56694071, -0.6935729, 0.44423429]], dtype=torch.float32)
+EV = torch.tensor([1.65513492, 0.48450358, 0.1565086], dtype=torch.float32)
+
+
+def generate_data(data_path, input_size, data_aug):
     train_path = os.path.join(data_path, 'train')
     test_path = os.path.join(data_path, 'test')
     val_path = os.path.join(data_path, 'val')
 
     train_preprocess = transforms.Compose([
-        transforms.RandomRotation((0, 360)),
+        transforms.RandomResizedCrop(
+            size=input_size,
+            scale=data_aug['scale'],
+            ratio=data_aug['stretch_ratio']
+        ),
+        transforms.RandomAffine(
+            degrees=data_aug['ratation'],
+            translate=data_aug['translation_ratio'],
+            scale=None,
+            shear=None
+        ),
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
         transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        transforms.Normalize(tuple(MEAN), tuple(STD)),
+        KrizhevskyColorAugmentation(sigma=data_aug['sigma'])
     ])
+
     test_preprocess = transforms.Compose([
+        transforms.Resize(input_size),
         transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        transforms.Normalize(tuple(MEAN), tuple(STD)),
+        KrizhevskyColorAugmentation(sigma=0)
     ])
 
     train_dataset = datasets.ImageFolder(train_path, train_preprocess)
@@ -53,3 +78,26 @@ class ScheduledWeightedSampler(Sampler):
 
     def __len__(self):
         return self.num_samples
+
+
+class KrizhevskyColorAugmentation(object):
+    def __init__(self, sigma=0.5):
+        self.sigma = sigma
+        self.mean = torch.tensor([0.0])
+        self.deviation = torch.tensor([sigma])
+
+    def __call__(self, img):
+        sigma = self.sigma
+        if not sigma > 0.0:
+            color_vec = torch.zeros(3, dtype=torch.float32)
+        else:
+            color_vec = torch.distributions.Normal(self.mean, self.deviation).sample((3,))
+
+        color_vec = color_vec.squeeze()
+        alpha = color_vec * EV
+        noise = torch.matmul(U, alpha.t())
+        noise = noise.view((3, 1, 1))
+        return img + noise
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(sigma={})'.format(self.sigma)

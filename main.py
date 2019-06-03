@@ -16,7 +16,11 @@ def main():
     CONFIG = SMALL_NET_CONFIG
 
     # load dataset
-    train_dataset, test_dataset, val_dataset = generate_data(CONFIG['DATA_PATH'])
+    train_dataset, test_dataset, val_dataset = generate_data(
+        CONFIG['DATA_PATH'],
+        CONFIG['INPUT_SIZE'],
+        CONFIG['DATA_AUGMENTATION']
+    )
 
     save_dir = os.path.split(CONFIG['SAVE_PATH'])[0]
     if not os.path.exists(save_dir):
