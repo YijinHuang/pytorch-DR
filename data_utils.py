@@ -6,15 +6,20 @@ from torch.utils.data.sampler import Sampler
 from torchvision import transforms, datasets
 
 
-# channel means and standard deviations of kaggle dataset
+# channel means and standard deviations of kaggle dataset, computed by origin author
 MEAN = [108.64628601 / 255, 75.86886597 / 255, 54.34005737 / 255]
 STD = [70.53946096 / 255, 51.71475228 / 255, 43.03428563 / 255]
 
-# for color augmentation, computed with make_pca.py
+# for color augmentation, computed by origin author
 U = torch.tensor([[-0.56543481, 0.71983482, 0.40240142],
                   [-0.5989477, -0.02304967, -0.80036049],
                   [-0.56694071, -0.6935729, 0.44423429]], dtype=torch.float32)
 EV = torch.tensor([1.65513492, 0.48450358, 0.1565086], dtype=torch.float32)
+
+# set of resampling weights that yields balanced classes, computed by origin author
+BALANCE_WEIGHTS = torch.tensor([1.3609453700116234, 14.378223495702006,
+                                6.637566137566138, 40.235967926689575,
+                                49.612994350282484], dtype=torch.double)
 
 
 def generate_data(data_path, input_size, data_aug):
@@ -44,8 +49,7 @@ def generate_data(data_path, input_size, data_aug):
     test_preprocess = transforms.Compose([
         transforms.Resize(input_size),
         transforms.ToTensor(),
-        transforms.Normalize(tuple(MEAN), tuple(STD)),
-        KrizhevskyColorAugmentation(sigma=0)
+        transforms.Normalize(tuple(MEAN), tuple(STD))
     ])
 
     train_dataset = datasets.ImageFolder(train_path, train_preprocess)
@@ -62,7 +66,7 @@ class ScheduledWeightedSampler(Sampler):
         self.replacement = replacement
 
         self.epoch = 0
-        self.w0 = torch.as_tensor([1.36, 14.4, 6.64, 40.2, 49.6], dtype=torch.double)
+        self.w0 = BALANCE_WEIGHTS
         self.wf = torch.as_tensor([1, 2, 2, 2, 2], dtype=torch.double)
         self.train_sample_weight = torch.zeros(len(train_targets), dtype=torch.double)
 

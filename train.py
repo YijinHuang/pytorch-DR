@@ -26,7 +26,7 @@ def train(net, net_size, input_size, feature_dim, train_dataset, val_dataset,
 
     # define loss and optimizier
     MSELoss = torch.nn.MSELoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9, nesterov=True)
+    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9, nesterov=True, weight_decay=0.0005)
 
     # learning rate decay
     milestones = [150, 220]
