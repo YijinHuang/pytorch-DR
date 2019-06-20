@@ -25,7 +25,7 @@ class o_ONet(nn.Module):
             self.small_conv_2 = nn.Sequential(
                 self.basic_conv2d(32, 64, sizes[1], sizes[1], kernel_size=5, stride=2, padding=2),
                 self.basic_conv2d(64, 64, sizes[1], sizes[1], kernel_size=3, stride=1, padding=1),
-                self.basic_conv2d(64, 64, sizes[1], sizes[1], kernel_size=3, stride=1, padding=1),
+                self.basic_conv2d(64, 64, sizes[1], sizes[1], kernel_size=3, stride=1, padding=1, activate_func=False),
             )
 
             self.small_downsampling_2 = self.downsampling(64, 128, sizes[2], sizes[2], kernel_size=1, stride=2, padding=0)
@@ -34,7 +34,7 @@ class o_ONet(nn.Module):
                 nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
                 self.basic_conv2d(64, 128, sizes[2], sizes[2], kernel_size=3, stride=1, padding=1),
                 self.basic_conv2d(128, 128, sizes[2], sizes[2], kernel_size=3, stride=1, padding=1),
-                self.basic_conv2d(128, 128, sizes[2], sizes[2], kernel_size=3, stride=1, padding=1),
+                self.basic_conv2d(128, 128, sizes[2], sizes[2], kernel_size=3, stride=1, padding=1, activate_func=False),
             )
 
         if net_size in ['medium', 'large']:
@@ -45,7 +45,7 @@ class o_ONet(nn.Module):
                 nn.MaxPool2d(kernel_size=3, stride=2, padding=0),
                 self.basic_conv2d(128, 256, sizes[3], sizes[3], kernel_size=3, stride=1, padding=1),
                 self.basic_conv2d(256, 256, sizes[3], sizes[3], kernel_size=3, stride=1, padding=1),
-                self.basic_conv2d(256, 256, sizes[3], sizes[3], kernel_size=3, stride=1, padding=1),
+                self.basic_conv2d(256, 256, sizes[3], sizes[3], kernel_size=3, stride=1, padding=1, activate_func=False),
             )
 
         if net_size in ['large']:
@@ -55,8 +55,11 @@ class o_ONet(nn.Module):
             self.large_conv_1 = nn.Sequential(
                 nn.MaxPool2d(kernel_size=3, stride=2, padding=0),
                 self.basic_conv2d(256, 512, sizes[4], sizes[4], kernel_size=3, stride=1, padding=1),
-                self.basic_conv2d(512, 512, sizes[4], sizes[4], kernel_size=3, stride=1, padding=1),
+                self.basic_conv2d(512, 512, sizes[4], sizes[4], kernel_size=3, stride=1, padding=1, activate_func=False),
             )
+
+        # activate funciton
+        self.activate_func = nn.LeakyReLU(negative_slope=0.01)
 
         # RMSPooling layer
         self.rmspool = RMSPool(3, 3)
@@ -80,11 +83,13 @@ class o_ONet(nn.Module):
                 nn.init.orthogonal_(m.weight, 1)
                 nn.init.constant_(m.bias, 0.05)
 
-    def basic_conv2d(self, in_channels, out_channels, height, width, kernel_size, stride, padding):
-        return nn.Sequential(
-            Conv2dUntiedBias(in_channels, out_channels, height, width, kernel_size, stride, padding),
-            nn.LeakyReLU(negative_slope=0.01)
+    def basic_conv2d(self, in_channels, out_channels, height, width, kernel_size, stride, padding, activate_func=True):
+        basic_block = nn.Sequential(
+            Conv2dUntiedBias(in_channels, out_channels, height, width, kernel_size, stride, padding)
         )
+        if activate_func:
+            basic_block.add_module('activate_func', nn.LeakyReLU(negative_slope=0.01))
+        return basic_block
 
     def downsampling(self, in_channels, out_channels, height, width, kernel_size, stride, padding):
         return Conv2dUntiedBias(in_channels, out_channels, height, width, kernel_size, stride, padding)
@@ -95,17 +100,21 @@ class o_ONet(nn.Module):
             identity_1 = self.small_downsampling_1(features_1)
 
             features_2 = self.small_conv_2(features_1) + identity_1
+            features_2 = self.activate_func(features_2)
             identity_2 = self.small_downsampling_2(features_2)
 
             features = self.small_conv_3(features_2) + identity_2
+            features = self.activate_func(features)
 
         if self.net_size in ['medium', 'large']:
             identity = self.small_downsampling_3(features)
             features = self.medium_conv_1(features) + identity
+            features = self.activate_func(features)
 
         if self.net_size in ['large']:
             identity = self.medium_downsampling_1(features)
             features = self.large_conv_1(features) + identity
+            features = self.activate_func(features)
 
         features = self.rmspool(features)
 
