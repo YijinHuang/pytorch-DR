@@ -17,7 +17,7 @@ class o_ONet(nn.Module):
             self.small_conv_1 = nn.Sequential(
                 self.basic_conv2d(3, 32, sizes[0], sizes[0], kernel_size=5, stride=2, padding=2),
                 self.basic_conv2d(32, 32, sizes[0], sizes[0], kernel_size=3, stride=1, padding=1),
-                nn.MaxPool2d(kernel_size=3, stride=2, padding=0)
+                nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
             )
 
             self.small_downsampling_1 = self.downsampling(32, 64, sizes[1], sizes[1], kernel_size=1, stride=2, padding=0)
@@ -42,7 +42,7 @@ class o_ONet(nn.Module):
             self.small_downsampling_3 = self.downsampling(128, 256, sizes[3], sizes[3], kernel_size=1, stride=2, padding=0)
 
             self.medium_conv_1 = nn.Sequential(
-                nn.MaxPool2d(kernel_size=3, stride=2, padding=0),
+                nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
                 self.basic_conv2d(128, 256, sizes[3], sizes[3], kernel_size=3, stride=1, padding=1),
                 self.basic_conv2d(256, 256, sizes[3], sizes[3], kernel_size=3, stride=1, padding=1),
                 self.basic_conv2d(256, 256, sizes[3], sizes[3], kernel_size=3, stride=1, padding=1, activate_func=False),
@@ -50,10 +50,10 @@ class o_ONet(nn.Module):
 
         if net_size in ['large']:
             # 16-18 layers
-            self.medium_downsampling_1 = self.downsampling(256, 512, sizes[3], sizes[3], kernel_size=1, stride=2, padding=0)
+            self.medium_downsampling_1 = self.downsampling(256, 512, sizes[4], sizes[4], kernel_size=1, stride=2, padding=0)
 
             self.large_conv_1 = nn.Sequential(
-                nn.MaxPool2d(kernel_size=3, stride=2, padding=0),
+                nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
                 self.basic_conv2d(256, 512, sizes[4], sizes[4], kernel_size=3, stride=1, padding=1),
                 self.basic_conv2d(512, 512, sizes[4], sizes[4], kernel_size=3, stride=1, padding=1, activate_func=False),
             )
@@ -62,20 +62,16 @@ class o_ONet(nn.Module):
         self.activate_func = nn.LeakyReLU(negative_slope=0.01)
 
         # RMSPooling layer
-        self.rmspool = RMSPool(3, 3)
+        self.rmspool = RMSPool(3, 2)
 
         # regression part
-        self.fc = nn.Sequential(
-            nn.Dropout(p=0.5),
-            nn.Linear(feature_dim, 1024),
-            nn.MaxPool1d(kernel_size=2, stride=2),
-            nn.LeakyReLU(negative_slope=0.01),
-            nn.Dropout(p=0.5),
-            nn.Linear(512, 1024),
-            nn.MaxPool1d(kernel_size=2, stride=2),
-            nn.LeakyReLU(negative_slope=0.01),
-            nn.Linear(512, 1)
-        )
+        self.maxout = nn.MaxPool1d(kernel_size=2, stride=2)
+        self.dense_norm = nn.BatchNorm1d(1024)
+        self.dropout = nn.Dropout(p=0.5)
+
+        self.fc1 = nn.Linear(feature_dim, 1024)
+        self.fc2 = nn.Linear(512, 1024)
+        self.fc3 = nn.Linear(512, 1)
 
         # initial parameters
         for m in self.modules():
@@ -85,14 +81,18 @@ class o_ONet(nn.Module):
 
     def basic_conv2d(self, in_channels, out_channels, height, width, kernel_size, stride, padding, activate_func=True):
         basic_block = nn.Sequential(
-            Conv2dUntiedBias(in_channels, out_channels, height, width, kernel_size, stride, padding)
+            Conv2dUntiedBias(in_channels, out_channels, height, width, kernel_size, stride, padding),
+            nn.BatchNorm2d(out_channels)
         )
         if activate_func:
             basic_block.add_module('activate_func', nn.LeakyReLU(negative_slope=0.01))
         return basic_block
 
     def downsampling(self, in_channels, out_channels, height, width, kernel_size, stride, padding):
-        return Conv2dUntiedBias(in_channels, out_channels, height, width, kernel_size, stride, padding)
+        return nn.Sequential(
+            Conv2dUntiedBias(in_channels, out_channels, height, width, kernel_size, stride, padding),
+            nn.BatchNorm2d(out_channels)
+        )
 
     def forward(self, x):
         if self.net_size in ['small', 'medium', 'large']:
@@ -119,10 +119,23 @@ class o_ONet(nn.Module):
         features = self.rmspool(features)
 
         # reshape to satisify maxpool1d input shape requirement
+        features = features.view(features.size(0), -1)
+        features = self.dropout(features)
+        features = self.dense_norm(self.fc1(features))
         features = features.view(features.size(0), 1, -1)
-        predict = self.fc(features)
-        predict = torch.squeeze(predict)
-        return predict
+        features = self.maxout(features)
+        features = self.activate_func(features)
+
+        features = features.view(features.size(0), -1)
+        features = self.dropout(features)
+        features = self.dense_norm(self.fc2(features))
+        features = features.view(features.size(0), 1, -1)
+        features = self.maxout(features)
+        features = self.activate_func(features)
+
+        logits = self.fc3(features)
+        logits = torch.squeeze(logits)
+        return logits
 
     # load part of pretrained_model like o_O solution \
     # using multi-scale image to train model by setting type to part \
@@ -156,15 +169,15 @@ class o_ONet(nn.Module):
         sizes = []
         if net_size in ['small', 'medium', 'large']:
             sizes.append(self._reduce_size(input_size, 5, 2, 2))
-            after_maxpool = self._reduce_size(sizes[-1], 3, 0, 2)
+            after_maxpool = self._reduce_size(sizes[-1], 3, 1, 2)
             sizes.append(self._reduce_size(after_maxpool, 5, 2, 2))
             after_maxpool = self._reduce_size(sizes[-1], 3, 1, 2)
             sizes.append(self._reduce_size(after_maxpool, 3, 1, 1))
         if net_size in ['medium', 'large']:
-            after_maxpool = self._reduce_size(sizes[-1], 3, 0, 2)
+            after_maxpool = self._reduce_size(sizes[-1], 3, 1, 2)
             sizes.append(self._reduce_size(after_maxpool, 3, 1, 1))
         if net_size in ['large']:
-            after_maxpool = self._reduce_size(sizes[-1], 3, 0, 2)
+            after_maxpool = self._reduce_size(sizes[-1], 3, 1, 2)
             sizes.append(self._reduce_size(after_maxpool, 3, 1, 1))
 
         return sizes

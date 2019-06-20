@@ -5,7 +5,7 @@ SMALL_NET_CONFIG = {
     'PRETRAINED_PATH': None,
     'LEARNING_RATE': 3e-3,
     'INPUT_SIZE': 112,
-    'FEATURE_DIM': 512,
+    'FEATURE_DIM': 1152,
     'BATCH_SIZE': 128,
     'EPOCHS': 200,
     'DATA_AUGMENTATION': {
@@ -24,7 +24,7 @@ MEDIUM_NET_CONFIG = {
     'PRETRAINED_PATH': '../../result/o_O_result/o_O_small.pt',
     'LEARNING_RATE': 3e-3,
     'INPUT_SIZE': 224,
-    'FEATURE_DIM': 1024,
+    'FEATURE_DIM': 2304,
     'BATCH_SIZE': 128,
     'EPOCHS': 200,
     'DATA_AUGMENTATION': {
@@ -43,7 +43,7 @@ LARGE_NET_CONFIG = {
     'PRETRAINED_PATH': '../../result/o_O_result/o_O_medium.pt',
     'LEARNING_RATE': 3e-3,
     'INPUT_SIZE': 448,
-    'FEATURE_DIM': 2048,
+    'FEATURE_DIM': 4608,
     'BATCH_SIZE': 48,
     'EPOCHS': 250,
     'DATA_AUGMENTATION': {
