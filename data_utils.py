@@ -17,9 +17,7 @@ U = torch.tensor([[-0.56543481, 0.71983482, 0.40240142],
 EV = torch.tensor([1.65513492, 0.48450358, 0.1565086], dtype=torch.float32)
 
 # set of resampling weights that yields balanced classes, computed by origin author
-BALANCE_WEIGHTS = torch.tensor([1.3609453700116234, 14.378223495702006,
-                                6.637566137566138, 40.235967926689575,
-                                49.612994350282484], dtype=torch.double)
+BALANCE_WEIGHTS = torch.tensor([1.3609453700116234, 2.770184853905784], dtype=torch.double)
 
 
 def generate_data(data_path, input_size, data_aug):
@@ -67,7 +65,7 @@ class ScheduledWeightedSampler(Sampler):
 
         self.epoch = 0
         self.w0 = BALANCE_WEIGHTS
-        self.wf = torch.as_tensor([1, 2, 2, 2, 2], dtype=torch.double)
+        self.wf = torch.as_tensor([1, 2], dtype=torch.double)
         self.train_sample_weight = torch.zeros(len(train_targets), dtype=torch.double)
 
     def step(self):

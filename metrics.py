@@ -2,11 +2,11 @@ import torch
 import numpy as np
 
 
-def classify(predict, thresholds=[0, 0.5, 1.5, 2.5, 3.5]):
-    predict = max(predict, thresholds[0])
-    for i in reversed(range(len(thresholds))):
-        if predict >= thresholds[i]:
-            return i
+def classify(predict, thresholds=0.5):
+    if predict > thresholds:
+        return 1
+    else:
+        return 0
 
 
 def quadratic_weighted_kappa(conf_mat):

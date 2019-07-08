@@ -74,7 +74,7 @@ def train(net, net_size, input_size, feature_dim, train_dataset, val_dataset,
             )
 
         # save model
-        c_matrix = np.zeros((5, 5), dtype=int)
+        c_matrix = np.zeros((2, 2), dtype=int)
         acc = _eval(model, val_loader, c_matrix)
         kappa = quadratic_weighted_kappa(c_matrix)
         print('validation accuracy: {}, kappa: {}'.format(acc, kappa))
@@ -92,7 +92,7 @@ def train(net, net_size, input_size, feature_dim, train_dataset, val_dataset,
 
 
 def evaluate(model_path, test_dataset):
-    c_matrix = np.zeros((5, 5), dtype=int)
+    c_matrix = np.zeros((2, 2), dtype=int)
 
     trained_model = torch.load(model_path).cuda()
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
