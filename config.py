@@ -1,7 +1,7 @@
 SMALL_NET_CONFIG = {
     'NET_SIZE': 'small',
     'DATA_PATH': '../../dataset/train_data_full_128',
-    'SAVE_PATH': '../../result/o_O_result/o_O_small.pt',
+    'SAVE_PATH': '../../result/o_O_result/o_O_deeper_small.pt',
     'PRETRAINED_PATH': None,
     'LEARNING_RATE': 3e-3,
     'INPUT_SIZE': 112,

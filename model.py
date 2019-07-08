@@ -28,11 +28,21 @@ class o_ONet(nn.Module):
                 self.basic_conv2d(64, 64, sizes[1], sizes[1], kernel_size=3, stride=1, padding=1, activate_func=False),
             )
 
+            self.small_conv_3 = nn.Sequential(
+                self.basic_conv2d(64, 64, sizes[1], sizes[1], kernel_size=3, stride=1, padding=1),
+                self.basic_conv2d(64, 64, sizes[1], sizes[1], kernel_size=3, stride=1, padding=1, activate_func=False),
+            )    
+
             self.small_downsampling_2 = self.downsampling(64, 128, sizes[2], sizes[2], kernel_size=1, stride=2, padding=0)
 
-            self.small_conv_3 = nn.Sequential(
+            self.small_conv_4 = nn.Sequential(
                 nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
                 self.basic_conv2d(64, 128, sizes[2], sizes[2], kernel_size=3, stride=1, padding=1),
+                self.basic_conv2d(128, 128, sizes[2], sizes[2], kernel_size=3, stride=1, padding=1),
+                self.basic_conv2d(128, 128, sizes[2], sizes[2], kernel_size=3, stride=1, padding=1, activate_func=False),
+            )
+
+            self.small_conv_5 = nn.Sequential(
                 self.basic_conv2d(128, 128, sizes[2], sizes[2], kernel_size=3, stride=1, padding=1),
                 self.basic_conv2d(128, 128, sizes[2], sizes[2], kernel_size=3, stride=1, padding=1, activate_func=False),
             )
@@ -105,9 +115,17 @@ class o_ONet(nn.Module):
 
             features_2 = self.small_conv_2(features_1) + identity_1
             features_2 = self.activate_func(features_2)
-            identity_2 = self.small_downsampling_2(features_2)
+            identity_2 = features_2
 
-            features = self.small_conv_3(features_2) + identity_2
+            features_3 = self.small_conv_3(features_2) + identity_2
+            features_3 = self.activate_func(features_3)
+            identity_3 = self.small_downsampling_2(features_3)           
+
+            features_4 = self.small_conv_4(features_3) + identity_3
+            features_4 = self.activate_func(features_4)
+            identity_4 = features_4
+
+            features = self.small_conv_5(features_4) + identity_4
             features = self.activate_func(features)
 
         if self.net_size in ['medium', 'large']:
