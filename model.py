@@ -65,13 +65,17 @@ class o_ONet(nn.Module):
         self.rmspool = RMSPool(3, 2)
 
         # regression part
-        self.maxout = nn.MaxPool1d(kernel_size=2, stride=2)
-        self.dense_norm = nn.BatchNorm1d(1024)
-        self.dropout = nn.Dropout(p=0.5)
-
-        self.fc1 = nn.Linear(feature_dim, 1024)
-        self.fc2 = nn.Linear(512, 1024)
-        self.fc3 = nn.Linear(512, 1)
+        self.fc = nn.Sequential(
+            nn.Dropout(p=0.5),
+            nn.Linear(feature_dim, 1024),
+            nn.MaxPool1d(kernel_size=2, stride=2),
+            nn.LeakyReLU(negative_slope=0.01),
+            nn.Dropout(p=0.5),
+            nn.Linear(512, 1024),
+            nn.MaxPool1d(kernel_size=2, stride=2),
+            nn.LeakyReLU(negative_slope=0.01),
+            nn.Linear(512, 1)
+        )
 
         # initial parameters
         for m in self.modules():
@@ -82,7 +86,7 @@ class o_ONet(nn.Module):
     def basic_conv2d(self, in_channels, out_channels, height, width, kernel_size, stride, padding, activate_func=True):
         basic_block = nn.Sequential(
             Conv2dUntiedBias(in_channels, out_channels, height, width, kernel_size, stride, padding),
-            nn.BatchNorm2d(out_channels)
+            nn.GroupNorm(32, out_channels)
         )
         if activate_func:
             basic_block.add_module('activate_func', nn.LeakyReLU(negative_slope=0.01))
@@ -91,7 +95,7 @@ class o_ONet(nn.Module):
     def downsampling(self, in_channels, out_channels, height, width, kernel_size, stride, padding):
         return nn.Sequential(
             Conv2dUntiedBias(in_channels, out_channels, height, width, kernel_size, stride, padding),
-            nn.BatchNorm2d(out_channels)
+            nn.GroupNorm(32, out_channels)
         )
 
     def forward(self, x):
@@ -119,23 +123,10 @@ class o_ONet(nn.Module):
         features = self.rmspool(features)
 
         # reshape to satisify maxpool1d input shape requirement
-        features = features.view(features.size(0), -1)
-        features = self.dropout(features)
-        features = self.dense_norm(self.fc1(features))
         features = features.view(features.size(0), 1, -1)
-        features = self.maxout(features)
-        features = self.activate_func(features)
-
-        features = features.view(features.size(0), -1)
-        features = self.dropout(features)
-        features = self.dense_norm(self.fc2(features))
-        features = features.view(features.size(0), 1, -1)
-        features = self.maxout(features)
-        features = self.activate_func(features)
-
-        logits = self.fc3(features)
-        logits = torch.squeeze(logits)
-        return logits
+        predict = self.fc(features)
+        predict = torch.squeeze(predict)
+        return predict
 
     # load part of pretrained_model like o_O solution \
     # using multi-scale image to train model by setting type to part \

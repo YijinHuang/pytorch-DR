@@ -11,7 +11,7 @@ def train(net, net_size, input_size, feature_dim, train_dataset, val_dataset,
           epochs, learning_rate, batch_size, save_path, pretrained_model=None):
     # create dataloader
     train_targets = [sampler[1] for sampler in train_dataset.imgs]
-    weighted_sampler = ScheduledWeightedSampler(len(train_dataset), train_targets, True)
+    weighted_sampler = ScheduledWeightedSampler(len(train_dataset), train_targets, 0.975, True)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, sampler=weighted_sampler, drop_last=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
@@ -26,7 +26,8 @@ def train(net, net_size, input_size, feature_dim, train_dataset, val_dataset,
 
     # define loss and optimizier
     MSELoss = torch.nn.MSELoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9, nesterov=True, weight_decay=0.0005)
+    # optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9, nesterov=True, weight_decay=0.0005)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.0005)
 
     # learning rate decay
     milestones = [150, 220]
@@ -43,7 +44,10 @@ def train(net, net_size, input_size, feature_dim, train_dataset, val_dataset,
         # learning rate update
         lr_scheduler.step()
         if epoch in milestones:
-            print_msg('Learning rate decayed to {}'.format(lr_scheduler.get_lr()[0]))
+            for param_group in optimizer.param_groups:
+                curr_lr = param_group['lr']
+                break
+            print_msg('Learning rate decayed to {}'.format(curr_lr))
 
         epoch_loss = 0
         correct = 0

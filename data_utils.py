@@ -60,9 +60,10 @@ def generate_data(data_path, input_size, data_aug):
 
 
 class ScheduledWeightedSampler(Sampler):
-    def __init__(self, num_samples, train_targets, replacement=True):
+    def __init__(self, num_samples, train_targets, decay_rate, replacement=True):
         self.num_samples = num_samples
         self.train_targets = train_targets
+        self.decay_rate = decay_rate
         self.replacement = replacement
 
         self.epoch = 0
@@ -72,7 +73,7 @@ class ScheduledWeightedSampler(Sampler):
 
     def step(self):
         self.epoch += 1
-        factor = 0.975**(self.epoch - 1)
+        factor = self.decay_rate**(self.epoch - 1)
         self.weights = factor * self.w0 + (1 - factor) * self.wf
         for i, _class in enumerate(self.train_targets):
             self.train_sample_weight[i] = self.weights[_class]
