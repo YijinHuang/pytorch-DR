@@ -60,7 +60,7 @@ class o_ONet(nn.Module):
             nn.Linear(512, 1024),
             nn.MaxPool1d(kernel_size=2, stride=2),
             nn.LeakyReLU(negative_slope=0.01),
-            nn.Linear(512, 1)
+            nn.Linear(512, 2)
         )
 
         # initial parameters

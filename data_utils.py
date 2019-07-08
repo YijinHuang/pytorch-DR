@@ -17,7 +17,7 @@ U = torch.tensor([[-0.56543481, 0.71983482, 0.40240142],
 EV = torch.tensor([1.65513492, 0.48450358, 0.1565086], dtype=torch.float32)
 
 # set of resampling weights that yields balanced classes, computed by origin author
-BALANCE_WEIGHTS = torch.tensor([1.3609453700116234, 2.770184853905784], dtype=torch.double)
+BALANCE_WEIGHTS = torch.tensor([1.0, 2.770184853905784], dtype=torch.double)
 
 
 def generate_data(data_path, input_size, data_aug):

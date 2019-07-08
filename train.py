@@ -25,7 +25,7 @@ def train(net, net_size, input_size, feature_dim, train_dataset, val_dataset,
         print_msg('Loaded weights from {}: '.format(pretrained_model), sorted(pretrained_dict.keys()))
 
     # define loss and optimizier
-    MSELoss = torch.nn.MSELoss()
+    crossEntropyLoss = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9, nesterov=True, weight_decay=0.0005)
 
     # learning rate decay
@@ -51,11 +51,11 @@ def train(net, net_size, input_size, feature_dim, train_dataset, val_dataset,
         progress = tqdm(enumerate(train_loader))
         for step, train_data in progress:
             X, y = train_data
-            X, y = X.cuda(), y.float().cuda()
+            X, y = X.cuda(), y.long().cuda()
 
             # forward
             y_pred = model(X)
-            loss = MSELoss(y_pred, y)
+            loss = crossEntropyLoss(y_pred, y)
 
             # backward
             optimizer.zero_grad()
@@ -113,7 +113,7 @@ def _eval(model, dataloader, c_matrix=None):
     total = 0
     for test_data in dataloader:
         X, y = test_data
-        X, y = X.cuda(), y.float().cuda()
+        X, y = X.cuda(), y.long().cuda()
 
         y_pred = model(X)
         total += y.size(0)

@@ -2,11 +2,8 @@ import torch
 import numpy as np
 
 
-def classify(predict, thresholds=0.5):
-    if predict > thresholds:
-        return 1
-    else:
-        return 0
+def classify(predict):
+    return predict.argmax()
 
 
 def quadratic_weighted_kappa(conf_mat):
@@ -38,9 +35,10 @@ def accuracy(predictions, targets, c_matrix=None):
     targets = targets.data
 
     # avoid modifying origin predictions
-    predicted = torch.tensor(
-        [classify(p.item()) for p in predictions]
-    ).cuda().float()
+    # predicted = torch.tensor(
+    #     [classify(p.item()) for p in predictions]
+    # ).cuda().float()
+    predicted = predictions.argmax(-1)
 
     # update confusion matrix
     if c_matrix is not None:
