@@ -138,7 +138,7 @@ class o_ONet(nn.Module):
         # exclude
         for name in list(pretrained_dict.keys()):
             # using untied biases will make it unable to reload.
-            if 'bias' in name:
+            if name in model_dict.keys() and pretrained_dict[name].shape != model_dict[name].shape:
                 pretrained_dict.pop(name)
                 continue
             for e in exclude:
