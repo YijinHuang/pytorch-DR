@@ -20,8 +20,8 @@ SMALL_NET_CONFIG = {
 MEDIUM_NET_CONFIG = {
     'NET_SIZE': 'medium',
     'DATA_PATH': '../../dataset/train_data_full_256',
-    'SAVE_PATH': '../../results/o_O_result/o_O_medium.pt',
-    'PRETRAINED_PATH': '../../result/o_O_result/o_O_small.pt',
+    'SAVE_PATH': '../../result/o_O_result/o_O_deeper_medium.pt',
+    'PRETRAINED_PATH': '../../result/o_O_result/o_O_deeper_small.pt',
     'LEARNING_RATE': 3e-3,
     'INPUT_SIZE': 224,
     'FEATURE_DIM': 2304,
@@ -39,8 +39,8 @@ MEDIUM_NET_CONFIG = {
 LARGE_NET_CONFIG = {
     'NET_SIZE': 'large',
     'DATA_PATH': '../../dataset/train_data_full_512',
-    'SAVE_PATH': '../../results/o_O_result/o_O_large.pt',
-    'PRETRAINED_PATH': '../../result/o_O_result/o_O_medium.pt',
+    'SAVE_PATH': '../../result/o_O_result/o_O_deeper_large.pt',
+    'PRETRAINED_PATH': '../../result/o_O_result/o_O_deeper_medium.pt',
     'LEARNING_RATE': 3e-3,
     'INPUT_SIZE': 448,
     'FEATURE_DIM': 4608,

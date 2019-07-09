@@ -25,12 +25,12 @@ class o_ONet(nn.Module):
             self.small_conv_2 = nn.Sequential(
                 self.basic_conv2d(32, 64, sizes[1], sizes[1], kernel_size=5, stride=2, padding=2),
                 self.basic_conv2d(64, 64, sizes[1], sizes[1], kernel_size=3, stride=1, padding=1),
-                self.basic_conv2d(64, 64, sizes[1], sizes[1], kernel_size=3, stride=1, padding=1, activate_func=False),
+                self.basic_conv2d(64, 64, sizes[1], sizes[1], kernel_size=3, stride=1, padding=1, activate_func=False)
             )
 
             self.small_conv_3 = nn.Sequential(
                 self.basic_conv2d(64, 64, sizes[1], sizes[1], kernel_size=3, stride=1, padding=1),
-                self.basic_conv2d(64, 64, sizes[1], sizes[1], kernel_size=3, stride=1, padding=1, activate_func=False),
+                self.basic_conv2d(64, 64, sizes[1], sizes[1], kernel_size=3, stride=1, padding=1, activate_func=False)
             )    
 
             self.small_downsampling_2 = self.downsampling(64, 128, sizes[2], sizes[2], kernel_size=1, stride=2, padding=0)
@@ -39,12 +39,12 @@ class o_ONet(nn.Module):
                 nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
                 self.basic_conv2d(64, 128, sizes[2], sizes[2], kernel_size=3, stride=1, padding=1),
                 self.basic_conv2d(128, 128, sizes[2], sizes[2], kernel_size=3, stride=1, padding=1),
-                self.basic_conv2d(128, 128, sizes[2], sizes[2], kernel_size=3, stride=1, padding=1, activate_func=False),
+                self.basic_conv2d(128, 128, sizes[2], sizes[2], kernel_size=3, stride=1, padding=1, activate_func=False)
             )
 
             self.small_conv_5 = nn.Sequential(
                 self.basic_conv2d(128, 128, sizes[2], sizes[2], kernel_size=3, stride=1, padding=1),
-                self.basic_conv2d(128, 128, sizes[2], sizes[2], kernel_size=3, stride=1, padding=1, activate_func=False),
+                self.basic_conv2d(128, 128, sizes[2], sizes[2], kernel_size=3, stride=1, padding=1, activate_func=False)
             )
 
         if net_size in ['medium', 'large']:
@@ -55,7 +55,12 @@ class o_ONet(nn.Module):
                 nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
                 self.basic_conv2d(128, 256, sizes[3], sizes[3], kernel_size=3, stride=1, padding=1),
                 self.basic_conv2d(256, 256, sizes[3], sizes[3], kernel_size=3, stride=1, padding=1),
-                self.basic_conv2d(256, 256, sizes[3], sizes[3], kernel_size=3, stride=1, padding=1, activate_func=False),
+                self.basic_conv2d(256, 256, sizes[3], sizes[3], kernel_size=3, stride=1, padding=1, activate_func=False)
+            )
+
+            self.medium_conv_2 = nn.Sequential(
+                self.basic_conv2d(256, 256, sizes[3], sizes[3], kernel_size=3, stride=1, padding=1),
+                self.basic_conv2d(256, 256, sizes[3], sizes[3], kernel_size=3, stride=1, padding=1, activate_func=False)
             )
 
         if net_size in ['large']:
@@ -65,8 +70,13 @@ class o_ONet(nn.Module):
             self.large_conv_1 = nn.Sequential(
                 nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
                 self.basic_conv2d(256, 512, sizes[4], sizes[4], kernel_size=3, stride=1, padding=1),
-                self.basic_conv2d(512, 512, sizes[4], sizes[4], kernel_size=3, stride=1, padding=1, activate_func=False),
+                self.basic_conv2d(512, 512, sizes[4], sizes[4], kernel_size=3, stride=1, padding=1, activate_func=False)
             )
+
+            self.large_conv_2 = nn.Sequential(
+                self.basic_conv2d(256, 512, sizes[4], sizes[4], kernel_size=3, stride=1, padding=1),
+                self.basic_conv2d(256, 512, sizes[4], sizes[4], kernel_size=3, stride=1, padding=1, activate_func=False)
+            )   
 
         # activate funciton
         self.activate_func = nn.LeakyReLU(negative_slope=0.01)
@@ -130,13 +140,23 @@ class o_ONet(nn.Module):
 
         if self.net_size in ['medium', 'large']:
             identity = self.small_downsampling_3(features)
-            features = self.medium_conv_1(features) + identity
-            features = self.activate_func(features)
+
+            features_1 = self.medium_conv_1(features) + identity
+            features_1 = self.activate_func(features_1)
+            identity_1 = features_1
+
+            features = self.medium_conv_2(features_1) + identity_1
+            features = self.activate_func(features)           
 
         if self.net_size in ['large']:
             identity = self.medium_downsampling_1(features)
-            features = self.large_conv_1(features) + identity
-            features = self.activate_func(features)
+
+            features_1 = self.large_conv_1(features) + identity
+            features_1 = self.activate_func(features_1)
+            identity_1 = features_1
+
+            features = self.large_conv_2(features_1) + identity_1
+            features = self.activate_dunc(features)
 
         features = self.rmspool(features)
 
