@@ -74,8 +74,8 @@ class o_ONet(nn.Module):
             )
 
             self.large_conv_2 = nn.Sequential(
-                self.basic_conv2d(256, 512, sizes[4], sizes[4], kernel_size=3, stride=1, padding=1),
-                self.basic_conv2d(256, 512, sizes[4], sizes[4], kernel_size=3, stride=1, padding=1, activate_func=False)
+                self.basic_conv2d(512, 512, sizes[4], sizes[4], kernel_size=3, stride=1, padding=1),
+                self.basic_conv2d(512, 512, sizes[4], sizes[4], kernel_size=3, stride=1, padding=1, activate_func=False)
             )   
 
         # activate funciton
@@ -156,7 +156,7 @@ class o_ONet(nn.Module):
             identity_1 = features_1
 
             features = self.large_conv_2(features_1) + identity_1
-            features = self.activate_dunc(features)
+            features = self.activate_func(features)
 
         features = self.rmspool(features)
 
