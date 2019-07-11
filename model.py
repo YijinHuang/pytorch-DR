@@ -106,7 +106,6 @@ class o_ONet(nn.Module):
     def basic_conv2d(self, in_channels, out_channels, height, width, kernel_size, stride, padding, activate_func=True):
         basic_block = nn.Sequential(
             Conv2dUntiedBias(in_channels, out_channels, height, width, kernel_size, stride, padding),
-            nn.GroupNorm(32, out_channels)
         )
         if activate_func:
             basic_block.add_module('activate_func', nn.LeakyReLU(negative_slope=0.01))
@@ -115,7 +114,6 @@ class o_ONet(nn.Module):
     def downsampling(self, in_channels, out_channels, height, width, kernel_size, stride, padding):
         return nn.Sequential(
             Conv2dUntiedBias(in_channels, out_channels, height, width, kernel_size, stride, padding),
-            nn.GroupNorm(32, out_channels)
         )
 
     def forward(self, x):
