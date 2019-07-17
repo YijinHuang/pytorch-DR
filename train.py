@@ -33,7 +33,7 @@ def train(net, net_size, input_size, feature_dim, train_dataset, val_dataset,
     # learning rate warmup and decay
     milestones = [160, 230]
     warmup_epoch = 10
-    warmup_batch = (len(train_loader) // batch_size) * warmup_epoch
+    warmup_batch = len(train_loader) * warmup_epoch
 
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=milestones, gamma=0.1)
     warmup_scheduler = WarmupLRScheduler(optimizer, warmup_batch, learning_rate)
