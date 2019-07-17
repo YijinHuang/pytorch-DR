@@ -1,9 +1,10 @@
 import torch
 import numpy as np
 from tqdm import tqdm
+from torch import nn
 from torch.utils.data import DataLoader
 
-from data_utils import ScheduledWeightedSampler
+from data_utils import ScheduledWeightedSampler, EvaluationTransformer
 from metrics import classify, accuracy, quadratic_weighted_kappa
 
 
@@ -91,12 +92,15 @@ def train(net, net_size, input_size, feature_dim, train_dataset, val_dataset,
     return record_epochs, accs, losses
 
 
-def evaluate(model_path, test_dataset):
+def evaluate(model_path, test_dataset, input_size, data_aug, aug_times):
     c_matrix = np.zeros((5, 5), dtype=int)
 
     trained_model = torch.load(model_path).cuda()
+    transformer = EvaluationTransformer(input_size, data_aug, aug_times)
+    transformer.create_transform_params()
+
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
-    test_acc = _eval(trained_model, test_loader, c_matrix)
+    test_acc = eval_by_feature_extract(trained_model, transformer, test_loader, c_matrix)
     print('========================================')
     print('Finished! test acc: {}'.format(test_acc))
     print('Confusion Matrix:')
@@ -113,7 +117,7 @@ def _eval(model, dataloader, c_matrix=None):
     total = 0
     for test_data in dataloader:
         X, y = test_data
-        X, y = X.cuda(), y.float().cuda()
+        X, y = X.cuda(), y.long().cuda()
 
         y_pred = model(X)
         total += y.size(0)
@@ -121,6 +125,37 @@ def _eval(model, dataloader, c_matrix=None):
     acc = round(correct / total, 4)
 
     model.train()
+    torch.set_grad_enabled(True)
+    return acc
+
+
+def eval_by_feature_extract(model, transformer, dataloader, c_matrix=None):
+    torch.set_grad_enabled(False)
+
+    feature_extractor = nn.Sequential(list(model.children())[0])
+    classifier = nn.Sequential(list(model.children())[1])
+    feature_extractor.eval()
+    classifier.eval()
+
+    correct = 0
+    total = 0
+    for test_data in tqdm(dataloader):
+        filepaths, y = test_data
+        Xs = transformer.multi_transform(filepaths)
+        y = y.float().cuda()
+
+        features = []
+        for X in Xs:
+            X = X.cuda()
+            features.append(feature_extractor(X).mean(dim=0)) 
+
+        features = torch.stack(features)
+        flatten_features = features.view(features.size(0), 1, -1)
+        y_pred = classifier(flatten_features)
+        total += y.size(0)
+        correct += accuracy(y_pred, y, c_matrix) * y.size(0)
+    acc = round(correct / total, 4)
+
     torch.set_grad_enabled(True)
     return acc
 

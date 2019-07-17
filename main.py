@@ -13,7 +13,7 @@ torch.set_num_threads(8)
 
 def main():
     # network config
-    CONFIG = SMALL_NET_CONFIG
+    CONFIG = LARGE_NET_CONFIG
 
     # load dataset
     train_dataset, test_dataset, val_dataset = generate_data(
@@ -42,7 +42,13 @@ def main():
     )
 
     # test
-    evaluate(CONFIG['SAVE_PATH'], test_dataset)
+    evaluate(
+        CONFIG['SAVE_PATH'],
+        test_dataset,
+        CONFIG['INPUT_SIZE'],
+        CONFIG['DATA_AUGMENTATION'],
+        20
+    )
 
 
 if __name__ == '__main__':
