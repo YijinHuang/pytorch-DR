@@ -7,7 +7,7 @@ SMALL_NET_CONFIG = {
     'INPUT_SIZE': 112,
     'FEATURE_DIM': 1152,
     'BATCH_SIZE': 128,
-    'EPOCHS': 200,
+    'EPOCHS': 210,
     'DATA_AUGMENTATION': {
         'scale': (1 / 1.15, 1.15),
         'stretch_ratio': (0.7561, 1.3225),  # (1/(1.15*1.15) and 1.15*1.15)
@@ -26,7 +26,7 @@ MEDIUM_NET_CONFIG = {
     'INPUT_SIZE': 224,
     'FEATURE_DIM': 2304,
     'BATCH_SIZE': 128,
-    'EPOCHS': 200,
+    'EPOCHS': 210,
     'DATA_AUGMENTATION': {
         'scale': (1 / 1.15, 1.15),
         'stretch_ratio': (0.7561, 1.3225),  # (1/(1.15*1.15) and 1.15*1.15)
@@ -45,7 +45,7 @@ LARGE_NET_CONFIG = {
     'INPUT_SIZE': 448,
     'FEATURE_DIM': 4608,
     'BATCH_SIZE': 48,
-    'EPOCHS': 250,
+    'EPOCHS': 270,
     'DATA_AUGMENTATION': {
         'scale': (1 / 1.15, 1.15),
         'stretch_ratio': (0.7561, 1.3225),  # (1/(1.15*1.15) and 1.15*1.15)
