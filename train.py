@@ -4,21 +4,20 @@ from tqdm import tqdm
 from torch import nn
 from torch.utils.data import DataLoader
 
-from data_utils import ScheduledWeightedSampler, EvaluationTransformer
 from metrics import classify, accuracy, quadratic_weighted_kappa
+from data_utils import ScheduledWeightedSampler, PeculiarSampler, EvaluationTransformer
 
 
-def train(net, net_size, input_size, feature_dim, train_dataset, val_dataset,
-          epochs, learning_rate, batch_size, save_path, pretrained_model=None):
+def train_stem(net, train_dataset, val_dataset, net_size, input_size, feature_dim,
+               epochs, learning_rate, batch_size, save_path, pretrained_model=None):
     # create dataloader
-    train_targets = [sampler[1] for sampler in train_dataset.imgs]
+    train_targets = [sampler[1] for sampler in train_dataset.samples]
     weighted_sampler = ScheduledWeightedSampler(len(train_dataset), train_targets, True)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, sampler=weighted_sampler, drop_last=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
     # define model
     model = net(net_size, input_size, feature_dim).cuda()
-    print_msg('Trainable layers: ', ['{}\t{}'.format(k, v) for k, v in model.layer_configs()])
 
     # load pretrained weights
     if pretrained_model:
@@ -34,17 +33,79 @@ def train(net, net_size, input_size, feature_dim, train_dataset, val_dataset,
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=milestones, gamma=0.1)
 
     # train
+    record_epochs, accs, losses = train(
+        model,
+        train_loader,
+        val_loader,
+        MSELoss,
+        optimizer,
+        epochs,
+        save_path,
+        weighted_sampler,
+        lr_scheduler
+    )
+    return model, record_epochs, accs, losses
+
+
+def train_blend(net, train_dataset, val_dataset, feature_dim,
+                epochs, learning_rate, batch_size, save_path):
+    # create dataloader
+    train_targets = [sampler[1] for sampler in train_dataset.samples]
+    weighted_sampler = PeculiarSampler(len(train_dataset), train_targets, batch_size, replacement=False)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, sampler=weighted_sampler, drop_last=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+
+    # define model
+    model = net(feature_dim).cuda()
+
+    # define loss and optimizier
+    MSELoss = torch.nn.MSELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.005)
+
+    def regularize_loss(model, X, y_pred, y):
+        loss = 0
+        for param in list(model.children())[0].parameters():
+            loss += 2e-5 * torch.sum(torch.abs(param))
+        return loss
+
+    # learning rate decay
+    milestones = [60, 80, 90]
+    lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=milestones, gamma=0.1)
+
+    # train
+    record_epochs, accs, losses = train(
+        model,
+        train_loader,
+        val_loader,
+        MSELoss,
+        optimizer,
+        epochs,
+        save_path,
+        weighted_sampler,
+        lr_scheduler,
+        regularize_loss
+    )
+    return model, record_epochs, accs, losses
+
+
+def train(model, train_loader, val_loader, loss_function, optimizer, epochs, save_path,
+          weighted_sampler=None, lr_scheduler=None, extra_loss=None):
+    print_msg('Trainable layers: ', ['{}\t{}'.format(k, v) for k, v in model.layer_configs()])
+
+    # train
     max_kappa = 0
     record_epochs, accs, losses = [], [], []
     model.train()
     for epoch in range(1, epochs + 1):
         # resampling weight update
-        weighted_sampler.step()
+        if weighted_sampler:
+            weighted_sampler.step()
 
         # learning rate update
-        lr_scheduler.step()
-        if epoch in milestones:
-            print_msg('Learning rate decayed to {}'.format(lr_scheduler.get_lr()[0]))
+        if lr_scheduler:
+            lr_scheduler.step()
+            if epoch in lr_scheduler.milestones:
+                print_msg('Learning rate decayed to {}'.format(lr_scheduler.get_lr()[0]))
 
         epoch_loss = 0
         correct = 0
@@ -56,7 +117,9 @@ def train(net, net_size, input_size, feature_dim, train_dataset, val_dataset,
 
             # forward
             y_pred = model(X)
-            loss = MSELoss(y_pred, y)
+            loss = loss_function(y_pred, y)
+            if extra_loss:
+                loss += extra_loss(model, X, y_pred, y)
 
             # backward
             optimizer.zero_grad()
@@ -92,15 +155,12 @@ def train(net, net_size, input_size, feature_dim, train_dataset, val_dataset,
     return record_epochs, accs, losses
 
 
-def evaluate(model_path, test_dataset, input_size, data_aug, aug_times):
+def evaluate(model_path, test_dataset):
     c_matrix = np.zeros((5, 5), dtype=int)
 
     trained_model = torch.load(model_path).cuda()
-    transformer = EvaluationTransformer(input_size, data_aug, aug_times)
-    transformer.create_transform_params()
-
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
-    test_acc = eval_by_feature_extract(trained_model, transformer, test_loader, c_matrix)
+    test_acc = _eval(trained_model, test_loader, c_matrix)
     print('========================================')
     print('Finished! test acc: {}'.format(test_acc))
     print('Confusion Matrix:')
@@ -117,7 +177,7 @@ def _eval(model, dataloader, c_matrix=None):
     total = 0
     for test_data in dataloader:
         X, y = test_data
-        X, y = X.cuda(), y.long().cuda()
+        X, y = X.cuda(), y.float().cuda()
 
         y_pred = model(X)
         total += y.size(0)
@@ -125,37 +185,6 @@ def _eval(model, dataloader, c_matrix=None):
     acc = round(correct / total, 4)
 
     model.train()
-    torch.set_grad_enabled(True)
-    return acc
-
-
-def eval_by_feature_extract(model, transformer, dataloader, c_matrix=None):
-    torch.set_grad_enabled(False)
-
-    feature_extractor = nn.Sequential(list(model.children())[0])
-    classifier = nn.Sequential(list(model.children())[1])
-    feature_extractor.eval()
-    classifier.eval()
-
-    correct = 0
-    total = 0
-    for test_data in tqdm(dataloader):
-        filepaths, y = test_data
-        Xs = transformer.multi_transform(filepaths)
-        y = y.float().cuda()
-
-        features = []
-        for X in Xs:
-            X = X.cuda()
-            features.append(feature_extractor(X).mean(dim=0)) 
-
-        features = torch.stack(features)
-        flatten_features = features.view(features.size(0), 1, -1)
-        y_pred = classifier(flatten_features)
-        total += y.size(0)
-        correct += accuracy(y_pred, y, c_matrix) * y.size(0)
-    acc = round(correct / total, 4)
-
     torch.set_grad_enabled(True)
     return acc
 

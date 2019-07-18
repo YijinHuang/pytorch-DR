@@ -3,12 +3,14 @@ import math
 import random
 
 import torch
+import numpy as np
+from torch import nn
+from PIL import Image
+from tqdm import tqdm
 from torch.utils.data import Dataset
 from torch.utils.data.sampler import Sampler
 from torchvision import transforms, datasets
 from torchvision.transforms import functional as F
-from PIL import Image
-import numpy as np
 
 
 # channel means and standard deviations of kaggle dataset, computed by origin author
@@ -25,14 +27,11 @@ EV = torch.tensor([1.65513492, 0.48450358, 0.1565086], dtype=torch.float32)
 BALANCE_WEIGHTS = torch.tensor([1.3609453700116234, 14.378223495702006,
                                 6.637566137566138, 40.235967926689575,
                                 49.612994350282484], dtype=torch.double)
+FINAL_WEIGHTS = torch.as_tensor([1, 2, 2, 2, 2], dtype=torch.double)
 
 
-def generate_data(data_path, input_size, data_aug):
-    train_path = os.path.join(data_path, 'train')
-    test_path = os.path.join(data_path, 'test')
-    val_path = os.path.join(data_path, 'val')
-
-    train_preprocess = transforms.Compose([
+def generate_stem_dataset(data_path, input_size, data_aug):
+    train_transform = transforms.Compose([
         transforms.RandomResizedCrop(
             size=input_size,
             scale=data_aug['scale'],
@@ -51,19 +50,71 @@ def generate_data(data_path, input_size, data_aug):
         KrizhevskyColorAugmentation(sigma=data_aug['sigma'])
     ])
 
-    def return_func(x):
-        return x
+    test_transform = transforms.Compose([
+        transforms.Resize(input_size),
+        transforms.ToTensor(),
+        transforms.Normalize(tuple(MEAN), tuple(STD))
+    ])
 
-    train_dataset = datasets.ImageFolder(train_path, train_preprocess)
-    test_dataset = datasets.ImageFolder(test_path, loader=return_func)
-    val_dataset = datasets.ImageFolder(val_path, loader=return_func)
+    def load_image(x):
+        return Image.open(x)
+
+    return generate_dataset(data_path, load_image, ('jpg', 'jpeg'), train_transform, test_transform)
+
+
+def generate_blend_dataset(data_path):
+    def load_tensor(x):
+        return torch.load(x)
+
+    return generate_dataset(data_path, load_tensor, ('pt',), None, None)
+
+
+def generate_dataset(data_path, loader, extensions, train_transform, test_transform):
+    train_path = os.path.join(data_path, 'train')
+    test_path = os.path.join(data_path, 'test')
+    val_path = os.path.join(data_path, 'val')
+
+    train_dataset = datasets.DatasetFolder(train_path, loader, extensions, transform=train_transform)
+    test_dataset = datasets.DatasetFolder(test_path, loader, extensions, transform=test_transform)
+    val_dataset = datasets.DatasetFolder(val_path, loader, extensions, transform=test_transform)
 
     return train_dataset, test_dataset, val_dataset
 
 
+def create_blend_features(model_path, source_path, target_path, input_size, data_aug, aug_times):
+    trained_model = torch.load(model_path).cuda()
+    torch.set_grad_enabled(False)
+
+    # feature extractor before dense layers
+    feature_extractor = nn.Sequential(list(trained_model.children())[0])
+    feature_extractor.eval()
+
+    # random data augmentation
+    transformer = EvaluationTransformer(input_size, data_aug, aug_times)
+    transformer.create_transform_params()
+
+    dataloaders = generate_dataset(source_path, None, None, loader=lambda x: x)
+    for dataloader in dataloaders:
+        for sample in tqdm(dataloader):
+            filepath, y = sample
+            X = transformer.transform(filepath).cuda()
+
+            feature_mean = feature_extractor(X).mean(dim=0)
+            feature_std = feature_extractor(X).std(dim=0)
+            blend_feature = torch.stack((feature_mean, feature_std))
+            blend_feature = blend_feature.view(1, -1)
+
+            new_filepath = filepath.replace(source_path, target_path, 1)
+            new_filepath = os.path.splitext(new_filepath)[0] + '.pt'
+            target_dir = os.path.split(new_filepath)[0]
+            if not os.path.exists(target_dir):
+                os.makedirs(target_dir)
+            torch.save(blend_feature, new_filepath)
+
+
 class EvaluationTransformer():
     def __init__(self, input_size, data_aug, aug_times):
-        self.input_size = input_size
+        self.input_size = input_size if isinstance(input_size, tuple) else (input_size, input_size)
         self.data_aug = data_aug
         self.aug_times = aug_times
         self.transform_params = {
@@ -125,16 +176,12 @@ class EvaluationTransformer():
             transform_params['Affine'].append((angle, translations, scale, shear))
 
             # horizontal flip
-            if random.random() < 0.5:
-                transform_params['Vertical_Flip'].append(True)
-            else:
-                transform_params['Vertical_Flip'].append(False)
+            hflip = random.random() < 0.5
+            transform_params['Vertical_Flip'].append(hflip)
 
             # vertical flip
-            if random.random() < 0.5:
-                transform_params['Horizontal_Flip'].append(True)
-            else:
-                transform_params['Horizontal_Flip'].append(False)
+            vflip = random.random() < 0.5
+            transform_params['Horizontal_Flip'].append(vflip)
 
             # color augmentation
             mean = torch.tensor([0.0])
@@ -197,14 +244,15 @@ class EvaluationTransformer():
 
 
 class ScheduledWeightedSampler(Sampler):
-    def __init__(self, num_samples, train_targets, replacement=True):
+    def __init__(self, num_samples, train_targets, initial_weight=BALANCE_WEIGHTS,
+                 final_weight=FINAL_WEIGHTS, replacement=True):
         self.num_samples = num_samples
         self.train_targets = train_targets
         self.replacement = replacement
 
         self.epoch = 0
-        self.w0 = BALANCE_WEIGHTS
-        self.wf = torch.as_tensor([1, 2, 2, 2, 2], dtype=torch.double)
+        self.w0 = initial_weight
+        self.wf = final_weight
         self.train_sample_weight = torch.zeros(len(train_targets), dtype=torch.double)
 
     def step(self):
@@ -221,6 +269,42 @@ class ScheduledWeightedSampler(Sampler):
         return self.num_samples
 
 
+class PeculiarSampler(Sampler):
+    def __init__(self, num_samples, train_targets, batch_size, balance_weight=BALANCE_WEIGHTS, replacement=True):
+        self.num_samples = num_samples
+        self.train_targets = train_targets
+        self.batch_size = batch_size
+        self.replacement = replacement
+
+        self.epoch = 0
+        self.args = list(range(num_samples))
+        self.train_sample_weight = torch.zeros(len(train_targets), dtype=torch.double)
+        for i, _class in enumerate(self.train_targets):
+            self.train_sample_weight[i] = balance_weight[_class]
+
+        self.epoch_samples = []
+
+    def step(self):
+        self.epoch_samples = []
+
+        batch_size = self.batch_size
+        batch_num = self.num_samples // self.batch_size
+        for i in range(batch_num):
+            r = random.random()
+            if r < 0.2:
+                self.epoch_samples += torch.multinomial(self.train_sample_weight, batch_size, self.replacement).tolist()
+            elif r < 0.5:
+                self.epoch_samples += random.sample(self.args, batch_size)
+            else:
+                self.epoch_samples += list(range(i * batch_size, (i + 1) * batch_size))
+
+    def __iter__(self):
+        return iter(self.epoch_samples)
+
+    def __len__(self):
+        return self.num_samples
+
+
 class KrizhevskyColorAugmentation(object):
     def __init__(self, sigma=0.5):
         self.sigma = sigma
@@ -229,7 +313,7 @@ class KrizhevskyColorAugmentation(object):
 
     def __call__(self, img, color_vec=None):
         sigma = self.sigma
-        if color_vec is not None:
+        if color_vec is None:
             if not sigma > 0.0:
                 color_vec = torch.zeros(3, dtype=torch.float32)
             else:

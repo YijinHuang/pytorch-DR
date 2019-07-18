@@ -132,6 +132,43 @@ class o_ONet(nn.Module):
         return (input_size + (2 * padding) - (kernel_size - 1) - 1) // stride + 1
 
 
+class BlendModel(nn.Module):
+    def __init__(self, feature_dim):
+        super(BlendModel, self).__init__()
+
+        # regression
+        self.dense_1 = nn.Linear(feature_dim, 32)
+        self.dense_2 = nn.Linear(16, 32)
+        self.dense_3 = nn.Linear(16, 1)
+        self.max_pool = nn.MaxPool1d(kernel_size=2, stride=2)
+        self.relu = nn.ReLU()
+
+        # initial parameters
+        for m in self.modules():
+            if isinstance(m, Conv2dUntiedBias) or isinstance(m, nn.Linear):
+                nn.init.orthogonal_(m.weight, 1)
+                nn.init.constant_(m.bias, 0.01)
+
+    def forward(self, x):
+        # reshape to satisify requirement of max pooing api
+        x = x.view(x.size(0), 1, -1)
+
+        x = self.dense_1(x)
+        x = self.max_pool(x)
+        x = self.relu(x)
+
+        x = self.dense_2(x)
+        x = self.max_pool(x)
+        x = self.relu(x)
+
+        predict = self.dense_3(x)
+        return predict.squeeze()
+
+    def layer_configs(self):
+        model_dict = self.state_dict()
+        return [(tensor, model_dict[tensor].size()) for tensor in model_dict]
+
+
 class RMSPool(nn.Module):
     def __init__(self, kernel_size, stride):
         super(RMSPool, self).__init__()
