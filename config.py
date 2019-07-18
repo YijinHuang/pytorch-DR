@@ -56,9 +56,10 @@ LARGE_NET_CONFIG = {
 }
 
 BLEND_NET_CONFIG = {
-    'MODEL_PATH': './o_O_large_79.pt',
+    'MODEL_PATH': '../../models/o_O_large_79.pt',
     'SOURCE_PATH': '/home/asus/Disk/yijin/ophthalmology/grade/kaggle/train_data_full_512',
-    'TARGET_PATH': '/home/asus/Disk/yijin/ophthalmology/grade/kaggle/train_data_full_512_blend_feature',
+    'TARGET_PATH': '/home/asus/Disk/yijin/ophthalmology/grade/kaggle/train_data_full_512_blend_feature_50',
+    'AUGMENTATION_TIMES': 50,
     'SAVE_PATH': './test.pt',
     'LEARNING_RATE': 5e-4,
     'FEATURE_DIM': 4096,

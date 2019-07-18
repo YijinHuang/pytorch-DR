@@ -14,7 +14,7 @@ torch.set_num_threads(8)
 def main():
     # network config
     STEM_CONFIG = LARGE_NET_CONFIG
-    stem(STEM_CONFIG)
+    # stem(STEM_CONFIG)
 
     # blend step config
     BLEND_CONFIG = BLEND_NET_CONFIG
@@ -60,14 +60,14 @@ def blend(BLEND_CONFIG, STEM_CONFIG):
         os.makedirs(save_dir)
 
     # create features with different data augmentation
-    # create_blend_features(
-    #     BLEND_CONFIG['MODEL_PATH'],
-    #     BLEND_CONFIG['SOURCE_PATH'],
-    #     BLEND_CONFIG['TARGET_PATH'],
-    #     STEM_CONFIG['INPUT_SIZE'],
-    #     STEM_CONFIG['DATA_AUGMENTATION'],
-    #     20
-    # )
+    create_blend_features(
+        BLEND_CONFIG['MODEL_PATH'],
+        BLEND_CONFIG['SOURCE_PATH'],
+        BLEND_CONFIG['TARGET_PATH'],
+        STEM_CONFIG['INPUT_SIZE'],
+        STEM_CONFIG['DATA_AUGMENTATION'],
+        BLEND_CONFIG['AUGMENTATION_TIMES']
+    )
     # generate dataset
     train_dataset, test_dataset, val_dataset = generate_blend_dataset(BLEND_CONFIG['TARGET_PATH'])
 

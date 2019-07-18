@@ -93,7 +93,7 @@ def create_blend_features(model_path, source_path, target_path, input_size, data
     transformer = EvaluationTransformer(input_size, data_aug, aug_times)
     transformer.create_transform_params()
 
-    dataloaders = generate_dataset(source_path, None, None, loader=lambda x: x)
+    dataloaders = generate_dataset(source_path, lambda x: x, ('jpg', 'jpeg'), None, None)
     for dataloader in dataloaders:
         for sample in tqdm(dataloader):
             filepath, y = sample
