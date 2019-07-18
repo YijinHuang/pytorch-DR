@@ -65,7 +65,7 @@ def train(net, net_size, input_size, feature_dim, train_dataset, val_dataset,
                 warmup_scheduler.step()
  
             X, y = train_data
-            X, y = X.cuda(), y.long().cuda()
+            X, y = X.cuda(), y.float().cuda()
 
             # forward
             y_pred = model(X)
