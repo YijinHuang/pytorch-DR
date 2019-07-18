@@ -31,7 +31,7 @@ MEDIUM_NET_CONFIG = {
         'scale': (1 / 1.15, 1.15),
         'stretch_ratio': (0.7561, 1.3225),  # (1/(1.15*1.15) and 1.15*1.15)
         'ratation': (-180, 180),
-        'translation_ratio': (40 / 112, 40 / 112),  # 40 pixel in the report
+        'translation_ratio': (40 / 224, 40 / 224),  # 40 pixel in the report
         'sigma': 0.5
     }
 }
@@ -50,7 +50,7 @@ LARGE_NET_CONFIG = {
         'scale': (1 / 1.15, 1.15),
         'stretch_ratio': (0.7561, 1.3225),  # (1/(1.15*1.15) and 1.15*1.15)
         'ratation': (-180, 180),
-        'translation_ratio': (40 / 112, 40 / 112),  # 40 pixel in the report
+        'translation_ratio': (40 / 448, 40 / 448),  # 40 pixel in the report
         'sigma': 0.5
     }
 }
