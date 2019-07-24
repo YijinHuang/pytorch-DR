@@ -27,7 +27,7 @@ def train(net, net_size, input_size, feature_dim, train_dataset, val_dataset,
         print_msg('Loaded weights from {}: '.format(pretrained_model), sorted(pretrained_dict.keys()))
 
     # define loss and optimizier
-    focal_loss = FocalLoss()
+    MSEloss = torch.nn.MSELoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9, nesterov=True, weight_decay=0.0005)
 
     # learning rate warmup and decay
@@ -68,7 +68,7 @@ def train(net, net_size, input_size, feature_dim, train_dataset, val_dataset,
 
             # forward
             y_pred = model(X)
-            loss = focal_loss(y_pred, y)
+            loss = MSEloss(y_pred, y)
 
             # backward
             optimizer.zero_grad()
