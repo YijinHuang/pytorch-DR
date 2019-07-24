@@ -64,7 +64,7 @@ def train(net, net_size, input_size, feature_dim, train_dataset, val_dataset,
                 warmup_scheduler.step()
  
             X, y = train_data
-            X, y = X.cuda(), y.cuda()
+            X, y = X.cuda(), y.float().cuda()
 
             # forward
             y_pred = model(X)
@@ -126,7 +126,7 @@ def _eval(model, dataloader, c_matrix=None):
     total = 0
     for test_data in dataloader:
         X, y = test_data
-        X, y = X.cuda(), y.long().cuda()
+        X, y = X.cuda(), y.float().cuda()
 
         y_pred = model(X)
         total += y.size(0)
