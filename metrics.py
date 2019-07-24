@@ -38,7 +38,6 @@ def accuracy(predictions, targets, c_matrix=None):
     predicted = torch.tensor(
         [classify(p.item()) for p in predictions]
     ).cuda().float()
-    predicted = predictions.argmax(-1)
 
     # update confusion matrix
     if c_matrix is not None:
