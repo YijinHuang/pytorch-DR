@@ -13,12 +13,12 @@ torch.set_num_threads(8)
 
 def main():
     # network config
-    STEM_CONFIG = LARGE_NET_CONFIG
-    # stem(STEM_CONFIG)
+    STEM_CONFIG = SMALL_NET_CONFIG
+    stem(STEM_CONFIG)
 
     # blend step config
-    BLEND_CONFIG = BLEND_NET_CONFIG
-    blend(BLEND_CONFIG, STEM_CONFIG)
+    # BLEND_CONFIG = BLEND_NET_CONFIG
+    # blend(BLEND_CONFIG, STEM_CONFIG)
 
 
 def stem(STEM_CONFIG):
