@@ -8,21 +8,40 @@ from metrics import classify, accuracy, quadratic_weighted_kappa
 from data_utils import ScheduledWeightedSampler, PeculiarSampler, EvaluationTransformer
 
 
-def train_stem(net, train_dataset, val_dataset, net_size, input_size, feature_dim,
-               epochs, learning_rate, batch_size, save_path, pretrained_model=None):
+def train_stem(net, train_dataset, val_dataset, net_size, input_size, feature_dim, epochs,
+               learning_rate, batch_size, save_path, pretrained_model=None, num_workers=8):
     # create dataloader
     train_targets = [sampler[1] for sampler in train_dataset.samples]
     weighted_sampler = ScheduledWeightedSampler(len(train_dataset), train_targets, True)
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, sampler=weighted_sampler, drop_last=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        sampler=weighted_sampler,
+        num_workers=num_workers,
+        drop_last=True
+    )
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=batch_size,
+        num_workers=num_workers,
+        shuffle=False
+    )
 
     # define model
     model = net(net_size, input_size, feature_dim).cuda()
+    gpu_num = torch.cuda.device_count()
+    if gpu_num > 1:
+        model = torch.nn.DataParallel(model)
+        print_msg('Use {} gpus to train.'.format(gpu_num))
+    module = model.module if isinstance(model, torch.nn.DataParallel) else model
+
+    # print model config
+    print_msg('Trainable layers: ', ['{}\t{}'.format(k, v) for k, v in module.layer_configs()])
 
     # load pretrained weights
     if pretrained_model:
-        pretrained_dict = model.load_weights(pretrained_model, ['fc', 'dense'])
-        print_msg('Loaded weights from {}: '.format(pretrained_model), sorted(pretrained_dict.keys()))
+        loaded_dict = module.load_weights(pretrained_model, ['fc', 'dense'])
+        print_msg('Loaded weights from {}: '.format(pretrained_model), sorted(loaded_dict.keys()))
 
     # define loss and optimizier
     MSELoss = torch.nn.MSELoss()
@@ -90,9 +109,6 @@ def train_blend(net, train_dataset, val_dataset, feature_dim,
 
 def train(model, train_loader, val_loader, loss_function, optimizer, epochs, save_path,
           weighted_sampler=None, lr_scheduler=None, extra_loss=None):
-    print_msg('Trainable layers: ', ['{}\t{}'.format(k, v) for k, v in model.layer_configs()])
-
-    # train
     max_kappa = 0
     record_epochs, accs, losses = [], [], []
     model.train()
@@ -152,6 +168,7 @@ def train(model, train_loader, val_loader, loss_function, optimizer, epochs, sav
         accs.append(acc)
         losses.append(avg_loss)
 
+    print('Best validation accuracy: {}'.format(max_kappa))
     return record_epochs, accs, losses
 
 

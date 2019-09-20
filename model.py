@@ -86,14 +86,17 @@ class o_ONet(nn.Module):
     # load part of pretrained_model like o_O solution \
     # using multi-scale image to train model by setting type to part \
     # or load full weights by setting type to full.
-    def load_weights(self, pretrained_model, exclude=[]):
-        pretrained_dict = torch.load(pretrained_model).state_dict()
+    def load_weights(self, pretrained_model_path, exclude=[]):
+        pretrained_model = torch.load(pretrained_model_path)
+        pretrained_dict = pretrained_model.state_dict()
+        if isinstance(pretrained_model, nn.DataParallel):
+            pretrained_dict = {key[7:]: value for key, value in pretrained_dict.items()}
         model_dict = self.state_dict()
 
         # exclude
         for name in list(pretrained_dict.keys()):
             # using untied biases will make it unable to reload.
-            if 'bias' in name:
+            if name in model_dict.keys() and pretrained_dict[name].shape != model_dict[name].shape:
                 pretrained_dict.pop(name)
                 continue
             for e in exclude:

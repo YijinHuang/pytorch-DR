@@ -1,5 +1,6 @@
 import os
 
+import pickle
 import torch
 import numpy as np
 
@@ -35,7 +36,7 @@ def stem(STEM_CONFIG):
     )
 
     # train
-    train_stem(
+    model, record_epochs, accs, losses = train_stem(
         net=o_ONet,
         train_dataset=train_dataset,
         val_dataset=val_dataset,
@@ -46,7 +47,11 @@ def stem(STEM_CONFIG):
         learning_rate=STEM_CONFIG['LEARNING_RATE'],
         batch_size=STEM_CONFIG['BATCH_SIZE'],
         save_path=STEM_CONFIG['SAVE_PATH'],
-        pretrained_model=None,
+        pretrained_model=STEM_CONFIG['PRETRAINED_PATH'],
+    )
+    pickle.dump(
+        (record_epochs, accs, losses),
+        open(CONFIG['RECORD_PATH'], 'wb')
     )
 
     # test the stem network

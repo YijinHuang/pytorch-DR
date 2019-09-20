@@ -2,6 +2,7 @@ SMALL_NET_CONFIG = {
     'NET_SIZE': 'small',
     'DATA_PATH': '../../dataset/train_data_full_128',
     'SAVE_PATH': '../../result/o_O_result/o_O_small.pt',
+    'RECORD_PATH': '../../result/o_O_result/o_O_small.rec',
     'PRETRAINED_PATH': None,
     'LEARNING_RATE': 3e-3,
     'INPUT_SIZE': 112,
@@ -14,13 +15,15 @@ SMALL_NET_CONFIG = {
         'ratation': (-180, 180),
         'translation_ratio': (40 / 112, 40 / 112),  # 40 pixel in the report
         'sigma': 0.5
-    }
+    },
+    "NUM_WORKERS": 8
 }
 
 MEDIUM_NET_CONFIG = {
     'NET_SIZE': 'medium',
     'DATA_PATH': '../../dataset/train_data_full_256',
     'SAVE_PATH': '../../result/o_O_result/o_O_medium.pt',
+    'RECORD_PATH': '../../result/o_O_result/o_O_medium.rec',
     'PRETRAINED_PATH': '../../result/o_O_result/o_O_small.pt',
     'LEARNING_RATE': 3e-3,
     'INPUT_SIZE': 224,
@@ -33,13 +36,15 @@ MEDIUM_NET_CONFIG = {
         'ratation': (-180, 180),
         'translation_ratio': (40 / 224, 40 / 224),  # 40 pixel in the report
         'sigma': 0.5
-    }
+    },
+    "NUM_WORKERS": 8
 }
 
 LARGE_NET_CONFIG = {
     'NET_SIZE': 'large',
     'DATA_PATH': '../../dataset/train_data_full_512',
     'SAVE_PATH': '../../result/o_O_result/o_O_large.pt',
+    'RECORD_PATH': '../../result/o_O_result/o_O_large.rec',
     'PRETRAINED_PATH': '../../result/o_O_result/o_O_medium.pt',
     'LEARNING_RATE': 3e-3,
     'INPUT_SIZE': 448,
@@ -52,7 +57,8 @@ LARGE_NET_CONFIG = {
         'ratation': (-180, 180),
         'translation_ratio': (40 / 448, 40 / 448),  # 40 pixel in the report
         'sigma': 0.5
-    }
+    },
+    "NUM_WORKERS": 8
 }
 
 BLEND_NET_CONFIG = {
