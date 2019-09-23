@@ -23,6 +23,9 @@ Your should organize your dataset as following:
 			├── b.jpg
 			├── ...
 		├── 2
+			├── x.jpg
+			├── y.jpg
+			├── ...
 		├── 3
 		├── 4
 		├── 5
@@ -40,7 +43,7 @@ You can run this code by:
 $ python main.py
 ```
 
-Most of hyperparameters and configures are in  `config.py`. You should choose *SMALL_NET_CONFIG*, *MEDIUM_NET_CONFIG* or *LARGE_NET_CONFIG* as *STEM_CONFIG* in main function of `main.py`. Function `stem` will train one inference network and function `blend` will train a ensemble network which is optional.
+Most of hyperparameters and configurations are in  `config.py`. You should choose *SMALL_NET_CONFIG*, *MEDIUM_NET_CONFIG* or *LARGE_NET_CONFIG* as *STEM_CONFIG* in main function of `main.py`. Function `stem` will train one inference network and function `blend` will train a ensemble network which is optional.
 
 ```python
 def main():
@@ -53,8 +56,8 @@ def main():
     # blend(BLEND_CONFIG, STEM_CONFIG)
 ```
 
-Moreover, if you want to get the final large network, you should train small and medium network first. More detailed information are in [o_O_solution_report.pdf](https://github.com/YijinHuang/pytorch-DR/blob/reimplement/o_O_solution_report.pdf).
+Moreover, if you want to get the final large network, you should train small and medium network first. More details are in [o_O_solution_report.pdf](https://github.com/YijinHuang/pytorch-DR/blob/reimplement/o_O_solution_report.pdf).
 
 ### Result
 
-This project is still in the process. The single large network can achieves 79.84% in EyePACs test set which is close to 80% that the author claims. You can use full ensemble methods that the author designed to get a better result but I haven't implement it yet.
+This project is still in progress. Now a single large network can achieves 79.84% in EyePACs test set which is close to 80% that the author claims. You can use full ensemble methods that the author designed to get a better result but I haven't implement it yet.
