@@ -30,11 +30,17 @@ Your should organize your dataset as following:
 	├── test
 ```
 
-Here, `val` and `test` directory have the same structure of  `train`.  directories`1` - `5` means the severities of disease. 
+Here, `val` and `test` directory have the same structure of  `train`.  The name of directories 1- 5 means the severity of disease. 
 
 #### Run
 
-Most of hyperparameters and configures are in  `config.py`. You should choose `SMALL_NET_CONFIG`, `MEDIUM_NET_CONFIG` or `LARGE_NET_CONFIG` as `STEM_CONFIG` in main function of `main.py`. Function `stem` will train one inference network and function `blend` will train a ensemble network which is optional.
+You can run this code by:
+
+```shell
+$ python main.py
+```
+
+Most of hyperparameters and configures are in  `config.py`. You should choose *SMALL_NET_CONFIG*, *MEDIUM_NET_CONFIG* or *LARGE_NET_CONFIG* as *STEM_CONFIG* in main function of `main.py`. Function `stem` will train one inference network and function `blend` will train a ensemble network which is optional.
 
 ```python
 def main():
@@ -47,7 +53,7 @@ def main():
     # blend(BLEND_CONFIG, STEM_CONFIG)
 ```
 
-Moreover, if you want to get the final large network, you should train small and medium network first. More detailed information are in `[o_O_solution_report.pdf](https://github.com/YijinHuang/pytorch-DR/blob/reimplement/o_O_solution_report.pdf)`.
+Moreover, if you want to get the final large network, you should train small and medium network first. More detailed information are in [o_O_solution_report.pdf](https://github.com/YijinHuang/pytorch-DR/blob/reimplement/o_O_solution_report.pdf).
 
 ### Result
 
