@@ -51,7 +51,7 @@ def generate_stem_dataset(data_path, input_size, data_aug):
     ])
 
     test_transform = transforms.Compose([
-        transforms.Resize(input_size),
+        transforms.Resize((input_size,input_size)),
         transforms.ToTensor(),
         transforms.Normalize(tuple(MEAN), tuple(STD))
     ])
