@@ -254,13 +254,17 @@ class ScheduledWeightedSampler(Sampler):
         self.w0 = initial_weight
         self.wf = final_weight
         self.train_sample_weight = torch.zeros(len(train_targets), dtype=torch.double)
+        self.assign_weight(initial_weight)
 
     def step(self):
         self.epoch += 1
         factor = 0.975**(self.epoch - 1)
         self.weights = factor * self.w0 + (1 - factor) * self.wf
+        self.assign_weight(self.weights)
+
+    def assign_weight(self, weights):
         for i, _class in enumerate(self.train_targets):
-            self.train_sample_weight[i] = self.weights[_class]
+            self.train_sample_weight[i] = weights[_class]
 
     def __iter__(self):
         return iter(torch.multinomial(self.train_sample_weight, self.num_samples, self.replacement).tolist())

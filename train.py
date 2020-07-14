@@ -12,7 +12,7 @@ def train_stem(net, train_dataset, val_dataset, net_size, input_size, feature_di
                learning_rate, batch_size, save_path, pretrained_model=None, num_workers=8):
     # create dataloader
     train_targets = [sampler[1] for sampler in train_dataset.samples]
-    weighted_sampler = ScheduledWeightedSampler(len(train_dataset), train_targets, True)
+    weighted_sampler = ScheduledWeightedSampler(len(train_dataset), train_targets, replacement=True)
     train_loader = DataLoader(
         train_dataset,
         batch_size=batch_size,
@@ -113,16 +113,6 @@ def train(model, train_loader, val_loader, loss_function, optimizer, epochs, sav
     record_epochs, accs, losses = [], [], []
     model.train()
     for epoch in range(1, epochs + 1):
-        # resampling weight update
-        if weighted_sampler:
-            weighted_sampler.step()
-
-        # learning rate update
-        if lr_scheduler:
-            lr_scheduler.step()
-            if epoch in lr_scheduler.milestones:
-                print_msg('Learning rate decayed to {}'.format(lr_scheduler.get_lr()[0]))
-
         epoch_loss = 0
         correct = 0
         total = 0
@@ -167,6 +157,16 @@ def train(model, train_loader, val_loader, loss_function, optimizer, epochs, sav
         record_epochs.append(epoch)
         accs.append(acc)
         losses.append(avg_loss)
+
+        # resampling weight update
+        if weighted_sampler:
+            weighted_sampler.step()
+
+        # learning rate update
+        if lr_scheduler:
+            lr_scheduler.step()
+            if epoch in lr_scheduler.milestones:
+                print_msg('Learning rate decayed to {}'.format(lr_scheduler.get_lr()[0]))
 
     print('Best validation accuracy: {}'.format(max_kappa))
     return record_epochs, accs, losses

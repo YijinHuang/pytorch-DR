@@ -1,6 +1,6 @@
 SMALL_NET_CONFIG = {
     'NET_SIZE': 'small',
-    'DATA_PATH': '../../dataset/train_data_full_128',
+    'DATA_PATH': '../../dataset/train_data_full_512',
     'SAVE_PATH': '../../result/o_O_result/o_O_small.pt',
     'RECORD_PATH': '../../result/o_O_result/o_O_small.rec',
     'PRETRAINED_PATH': None,
@@ -21,7 +21,7 @@ SMALL_NET_CONFIG = {
 
 MEDIUM_NET_CONFIG = {
     'NET_SIZE': 'medium',
-    'DATA_PATH': '../../dataset/train_data_full_256',
+    'DATA_PATH': '../../dataset/train_data_full_512',
     'SAVE_PATH': '../../result/o_O_result/o_O_medium.pt',
     'RECORD_PATH': '../../result/o_O_result/o_O_medium.rec',
     'PRETRAINED_PATH': '../../result/o_O_result/o_O_small.pt',
