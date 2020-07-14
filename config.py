@@ -16,7 +16,7 @@ SMALL_NET_CONFIG = {
         'translation_ratio': (40 / 112, 40 / 112),  # 40 pixel in the report
         'sigma': 0.5
     },
-    "NUM_WORKERS": 8
+    "NUM_WORKERS": 32
 }
 
 MEDIUM_NET_CONFIG = {
@@ -37,7 +37,7 @@ MEDIUM_NET_CONFIG = {
         'translation_ratio': (40 / 224, 40 / 224),  # 40 pixel in the report
         'sigma': 0.5
     },
-    "NUM_WORKERS": 8
+    "NUM_WORKERS": 32
 }
 
 LARGE_NET_CONFIG = {
@@ -58,7 +58,7 @@ LARGE_NET_CONFIG = {
         'translation_ratio': (40 / 448, 40 / 448),  # 40 pixel in the report
         'sigma': 0.5
     },
-    "NUM_WORKERS": 8
+    "NUM_WORKERS": 32
 }
 
 BLEND_NET_CONFIG = {

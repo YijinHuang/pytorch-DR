@@ -172,11 +172,11 @@ def train(model, train_loader, val_loader, loss_function, optimizer, epochs, sav
     return record_epochs, accs, losses
 
 
-def evaluate(model_path, test_dataset):
+def evaluate(model_path, test_dataset, num_workers=8):
     c_matrix = np.zeros((5, 5), dtype=int)
 
     trained_model = torch.load(model_path).cuda()
-    test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=32, num_workers=num_workers, shuffle=False)
     test_acc = _eval(trained_model, test_loader, c_matrix)
     print('========================================')
     print('Finished! test acc: {}'.format(test_acc))

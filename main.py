@@ -9,8 +9,6 @@ from model import o_ONet, BlendModel
 from train import train_stem, train_blend, evaluate
 from data_utils import generate_stem_dataset, generate_blend_dataset, create_blend_features
 
-torch.set_num_threads(8)
-
 
 def main():
     # network config
@@ -48,14 +46,15 @@ def stem(STEM_CONFIG):
         batch_size=STEM_CONFIG['BATCH_SIZE'],
         save_path=STEM_CONFIG['SAVE_PATH'],
         pretrained_model=STEM_CONFIG['PRETRAINED_PATH'],
+        num_workers=STEM_CONFIG['NUM_WORKERS']
     )
     pickle.dump(
         (record_epochs, accs, losses),
-        open(CONFIG['RECORD_PATH'], 'wb')
+        open(STEM_CONFIG['RECORD_PATH'], 'wb')
     )
 
     # test the stem network
-    evaluate(STEM_CONFIG['SAVE_PATH'], test_dataset)
+    evaluate(STEM_CONFIG['SAVE_PATH'], test_dataset, STEM_CONFIG['NUM_WORKERS'])
 
 
 def blend(BLEND_CONFIG, STEM_CONFIG):
