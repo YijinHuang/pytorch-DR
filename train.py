@@ -20,9 +20,12 @@ def train_stem(net, train_dataset, val_dataset, net_size, input_size, feature_di
         num_workers=num_workers,
         drop_last=True
     )
+
+    # avoid IndexError when use multiple gpus
+    val_batch_size = batch_size if len(val_dataset) % batch_size >= 2 * torch.cuda.device_count() else batch_size - 2 
     val_loader = DataLoader(
         val_dataset,
-        batch_size=batch_size,
+        batch_size=val_batch_size,
         num_workers=num_workers,
         shuffle=False
     )
@@ -72,7 +75,10 @@ def train_blend(net, train_dataset, val_dataset, feature_dim,
     train_targets = [sampler[1] for sampler in train_dataset.samples]
     weighted_sampler = PeculiarSampler(len(train_dataset), train_targets, batch_size, replacement=False)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, sampler=weighted_sampler, drop_last=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+
+    # avoid IndexError when use multiple gpus
+    val_batch_size = batch_size if len(val_dataset) % batch_size >= 2 * torch.cuda.device_count() else batch_size - 2 
+    val_loader = DataLoader(val_dataset, batch_size=val_batch_size, shuffle=False)
 
     # define model
     model = net(feature_dim).cuda()
